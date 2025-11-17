@@ -37,7 +37,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
     "D4 Teknik Telekomunikasi",
   ];
 
-  // Generate list angkatan otomatis dari tahun sekarang sampai 8 tahun kebelakang
+  // Generate list angkatan otomatis
   final List<String> listAngkatan = List.generate(
     8,
     (index) => (DateTime.now().year - index).toString(),
@@ -47,10 +47,11 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true, // biar scrollable saat keyboard muncul
+      resizeToAvoidBottomInset: true,
+
       body: Column(
         children: [
-          // Header
+          // ================= HEADER =================
           Container(
             padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
@@ -74,14 +75,14 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
             ),
           ),
 
-          // Form (expanded agar footer tetap di bawah)
+          // ================ FORM ================
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button + Title
+                  // BACK + TITLE
                   Row(
                     children: [
                       IconButton(
@@ -200,7 +201,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
                   ),
                   const SizedBox(height: 25),
 
-                  // Continue Button
+                  // ================ BUTTON CONTINUE ================
                   SizedBox(
                     width: double.infinity,
                     height: 45,
@@ -223,13 +224,14 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
                           return;
                         }
 
+                        // ========== DATA DIKIRIM KE CreateMahasiswaPage ==========
                         final biodataMahasiswa = {
-                          "nama": namaC.text,
-                          "nrp": nrpC.text,
+                          "nama": namaC.text.trim(),
+                          "nrp": nrpC.text.trim(),
                           "prodi": selectedProdi,
                           "angkatan": selectedAngkatan,
-                          "telepon": telpC.text,
-                          "pemulihan": recoveryC.text,
+                          "telepon": telpC.text.trim(),
+                          "email_pemulihan": recoveryC.text.trim(),
                         };
 
                         Navigator.push(
@@ -259,7 +261,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa> {
         ],
       ),
 
-      // Footer tetap di bawah
+      // ================= FOOTER =================
       bottomNavigationBar: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),

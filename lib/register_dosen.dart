@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_dosen.dart'; // pastikan file ini ada
+import 'create_dosen.dart';
 
 class RegisterDosen extends StatefulWidget {
   const RegisterDosen({super.key});
@@ -9,10 +9,12 @@ class RegisterDosen extends StatefulWidget {
 }
 
 class _RegisterDosenState extends State<RegisterDosen> {
-  // controller untuk text field dropdown
-  TextEditingController prodiController = TextEditingController();
+  final namaC = TextEditingController();
+  final nipC = TextEditingController();
+  final phoneC = TextEditingController();
+  final emailRecoveryC = TextEditingController();
 
-  // multi-select
+  TextEditingController prodiController = TextEditingController();
   Set<String> selectedProdi = {};
 
   final List<String> listProdi = [
@@ -38,11 +40,10 @@ class _RegisterDosenState extends State<RegisterDosen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset:
-          true, // biar form scrollable saat keyboard muncul
+      resizeToAvoidBottomInset: true,
       body: Column(
         children: [
-          // Header
+          // HEADER
           Container(
             padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
@@ -66,14 +67,13 @@ class _RegisterDosenState extends State<RegisterDosen> {
             ),
           ),
 
-          // Form (expanded agar footer tetap di bawah)
+          // FORM (scrollable)
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button sejajar dengan judul
                   Row(
                     children: [
                       IconButton(
@@ -81,13 +81,11 @@ class _RegisterDosenState extends State<RegisterDosen> {
                         icon: const Icon(Icons.arrow_back),
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          "Enter Your Biodata",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const Text(
+                        "Enter Your Biodata",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -95,8 +93,10 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 25),
 
+                  // Nama
                   const Text("Nama Lengkap"),
                   TextField(
+                    controller: namaC,
                     decoration: InputDecoration(
                       hintText: "nama lengkap",
                       border: OutlineInputBorder(
@@ -107,8 +107,10 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 15),
 
+                  // NIP
                   const Text("NIP"),
                   TextField(
+                    controller: nipC,
                     decoration: InputDecoration(
                       hintText: "Contoh : 123456",
                       border: OutlineInputBorder(
@@ -119,6 +121,7 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 15),
 
+                  // Prodi multi-select
                   const Text("Prodi yang Diajar"),
                   GestureDetector(
                     onTap: () {
@@ -143,6 +146,7 @@ class _RegisterDosenState extends State<RegisterDosen> {
                                       ),
                                     ),
                                     const SizedBox(height: 10),
+
                                     Expanded(
                                       child: ListView(
                                         children: listProdi.map((prodi) {
@@ -201,8 +205,10 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 15),
 
+                  // Phone
                   const Text("Nomor Telepon"),
                   TextField(
+                    controller: phoneC,
                     decoration: InputDecoration(
                       hintText: "08XXXXXX",
                       border: OutlineInputBorder(
@@ -213,8 +219,10 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 15),
 
+                  // Email Recovery
                   const Text("E-mail Pemulihan"),
                   TextField(
+                    controller: emailRecoveryC,
                     decoration: InputDecoration(
                       hintText: "nama@gmail.com",
                       border: OutlineInputBorder(
@@ -225,7 +233,7 @@ class _RegisterDosenState extends State<RegisterDosen> {
 
                   const SizedBox(height: 25),
 
-                  // Tombol Continue aktif
+                  // Continue button
                   SizedBox(
                     width: double.infinity,
                     height: 45,
@@ -245,11 +253,29 @@ class _RegisterDosenState extends State<RegisterDosen> {
                           return;
                         }
 
+                        if (namaC.text.isEmpty ||
+                            nipC.text.isEmpty ||
+                            phoneC.text.isEmpty ||
+                            emailRecoveryC.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Semua field harus diisi"),
+                            ),
+                          );
+                          return;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => CreateDosenPage(
-                              biodata: {"prodi": selectedProdi},
+                              biodata: {
+                                "nama": namaC.text.trim(),
+                                "nip": nipC.text.trim(),
+                                "phone": phoneC.text.trim(),
+                                "email_recovery": emailRecoveryC.text.trim(),
+                                "prodi": selectedProdi.toList(),
+                              },
                             ),
                           ),
                         );
@@ -262,6 +288,7 @@ class _RegisterDosenState extends State<RegisterDosen> {
                   ),
 
                   const SizedBox(height: 10),
+
                   const Text(
                     "By clicking continue, you agree to our Terms of Service and Privacy Policy",
                     style: TextStyle(fontSize: 11),
@@ -274,7 +301,7 @@ class _RegisterDosenState extends State<RegisterDosen> {
         ],
       ),
 
-      // Footer tetap di bawah
+      // FOOTER
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         width: double.infinity,

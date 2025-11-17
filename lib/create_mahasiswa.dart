@@ -1,68 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pass_pens/login.dart';
 
-// Halaman pilih prodi
-class PilihProdiPage extends StatefulWidget {
-  const PilihProdiPage({super.key});
-
-  @override
-  State<PilihProdiPage> createState() => _PilihProdiPageState();
-}
-
-class _PilihProdiPageState extends State<PilihProdiPage> {
-  String? selectedProdi;
-
-  // Nama lengkap -> singkatan prodi
-  final Map<String, String> prodiDomain = {
-    "D3 Teknik Informatika": "it",
-    "D4 Teknik Informatika": "it",
-    "D4 Teknik Komputer": "ce",
-    "D4 Sains Data Terapan": "ds",
-    "D4 Teknologi Rekayasa Multimedia": "met",
-    "D4 Teknologi Rekayasa Internet": "iet",
-    "D3 Multimedia Broadcasting": "mmb",
-    "D4 Teknologi Game": "gt",
-    "D3 Teknik Elektronika Industri": "iee",
-    "D4 Teknik Elektronika Industri": "iee",
-    "D3 Teknik Elektronika": "ee",
-    "D4 Teknik Elektronika": "ee",
-    "D4 Teknik Mekatronika": "me",
-    "D4 Sistem Pembangkit Energi": "pg",
-    "D3 Teknik Telekomunikasi": "te",
-    "D4 Teknik Telekomunikasi": "te",
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Pilih Prodi")),
-      body: Center(
-        child: DropdownButton<String>(
-          hint: const Text("Pilih Prodi"),
-          value: selectedProdi,
-          items: prodiDomain.keys.map((prodi) {
-            return DropdownMenuItem<String>(value: prodi, child: Text(prodi));
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => selectedProdi = value);
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      CreateMahasiswaPage(biodata: {"prodi": value}),
-                ),
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-}
-
-// Halaman create mahasiswa
 class CreateMahasiswaPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
 
@@ -73,107 +10,29 @@ class CreateMahasiswaPage extends StatefulWidget {
 }
 
 class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
-  final emailController = TextEditingController();
-  final passController = TextEditingController();
-  final confirmController = TextEditingController();
-
-  bool isLoading = false;
-
-  // Map nama lengkap -> singkatan
-  final Map<String, String> prodiToDomain = {
-    "D3 Teknik Informatika": "it",
-    "D4 Teknik Informatika": "it",
-    "D4 Teknik Komputer": "ce",
-    "D4 Sains Data Terapan": "ds",
-    "D4 Teknologi Rekayasa Multimedia": "met",
-    "D4 Teknologi Rekayasa Internet": "iet",
-    "D3 Multimedia Broadcasting": "mmb",
-    "D4 Teknologi Game": "gt",
-    "D3 Teknik Elektronika Industri": "iee",
-    "D4 Teknik Elektronika Industri": "iee",
-    "D3 Teknik Elektronika": "ee",
-    "D4 Teknik Elektronika": "ee",
-    "D4 Teknik Mekatronika": "me",
-    "D4 Sistem Pembangkit Energi": "pg",
-    "D3 Teknik Telekomunikasi": "te",
-    "D4 Teknik Telekomunikasi": "te",
-  };
-
-  bool isValidMahasiswaEmail(String email) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-    return email.endsWith("@$domain.student.pens.ac.id");
-  }
-
-  void createAccount() {
-    final email = emailController.text.trim();
-    final pass = passController.text.trim();
-    final confirm = confirmController.text.trim();
-
-    if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua field harus diisi")));
-      return;
-    }
-
-    if (!isValidMahasiswaEmail(email)) {
-      final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Email mahasiswa tidak valid.\nGunakan email: nama@$domain.student.pens.ac.id",
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (pass != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password dan konfirmasi tidak sama")),
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() => isLoading = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Akun mahasiswa berhasil dibuat!")),
-      );
-
-      // Langsung ke login
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false, // hapus semua route sebelumnya
-      );
-    });
-  }
+  final emailC = TextEditingController();
+  final passwordC = TextEditingController();
+  final confirmC = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
-          // ================= HEADER =================
+          // Header
           Container(
+            padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            color: const Color(0xFF1B4F7D),
-            child: Column(
-              children: const [
+            color: const Color(0xFF0D4C73),
+            child: const Column(
+              children: [
                 Text(
                   "PASS",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -186,15 +45,14 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
             ),
           ),
 
-          // ================= FORM =================
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Back + Title
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
@@ -203,22 +61,23 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          "Enter Account Name And Password",
+                          "Create Account",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 25),
 
+                  // Email
+                  const Text("E-mail"),
                   TextField(
-                    controller: emailController,
+                    controller: emailC,
                     decoration: InputDecoration(
-                      labelText: "PENS Email",
-                      hintText: "name@$domain.student.pens.ac.id",
+                      hintText: "example@gmail.com",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -226,12 +85,13 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                   ),
                   const SizedBox(height: 15),
 
+                  // Password
+                  const Text("Password"),
                   TextField(
-                    controller: passController,
+                    controller: passwordC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Enter Your Password",
-                      hintText: "minimum 8 characters",
+                      hintText: "Minimal 8 karakter",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -239,34 +99,63 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                   ),
                   const SizedBox(height: 15),
 
+                  // Confirm
+                  const Text("Confirm Password"),
                   TextField(
-                    controller: confirmController,
+                    controller: confirmC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Confirm Your Password",
-                      hintText: "Enter Your Password Again",
+                      hintText: "Ulangi password",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 25),
 
+                  // Submit
                   SizedBox(
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
-                      onPressed: isLoading ? null : createAccount,
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("CREATE"),
+                      onPressed: () {
+                        if (emailC.text.isEmpty ||
+                            passwordC.text.isEmpty ||
+                            confirmC.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Semua field harus diisi"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (passwordC.text != confirmC.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Password tidak sama"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final dataAkhir = {
+                          ...widget
+                              .biodata, // <-- ambil biodata dari halaman sebelumnya
+                          "email": emailC.text,
+                          "password": passwordC.text,
+                        };
+
+                        // Sementara arahkan kembali
+                        Navigator.pop(context, dataAkhir);
+                      },
+                      child: const Text(
+                        "Complete Registration",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -276,10 +165,11 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
         ],
       ),
 
-      // Footer tetap di bawah, tidak ikut naik saat keyboard muncul
+      // Footer
       bottomNavigationBar: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        color: const Color(0xFF1B4F7D),
+        color: const Color(0xFF0D4C73),
         child: const Text(
           "Electronic Engineering\nPolytechnic Institute of Surabaya",
           textAlign: TextAlign.center,

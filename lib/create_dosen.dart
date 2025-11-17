@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/supabase_config.dart';
 
 class CreateDosenPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
@@ -10,21 +11,22 @@ class CreateDosenPage extends StatefulWidget {
 }
 
 class _CreateDosenPageState extends State<CreateDosenPage> {
-  final emailController = TextEditingController();
-  final passController = TextEditingController();
-  final confirmController = TextEditingController();
+  final emailC = TextEditingController();
+  final passC = TextEditingController();
+  final confirmC = TextEditingController();
 
   bool isLoading = false;
 
-  // Validasi email dosen
-  bool isValidDosenEmail(String email) {
-    return email.endsWith("@lucturer.pens.ac.id"); // format email dosen
+  bool isValidEmailDosen(String email) {
+    return email.endsWith("@lecturer.pens.ac.id");
   }
 
-  void createAccount() {
-    final email = emailController.text.trim();
-    final pass = passController.text.trim();
-    final confirm = confirmController.text.trim();
+  Future<void> createAccount() async {
+    final client = SupabaseConfig.client;
+
+    final email = emailC.text.trim();
+    final pass = passC.text.trim();
+    final confirm = confirmC.text.trim();
 
     if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
       ScaffoldMessenger.of(
@@ -33,57 +35,127 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
       return;
     }
 
-    if (!isValidDosenEmail(email)) {
+    if (!isValidEmailDosen(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Email dosen tidak valid.\nGunakan email: nama@lucturer.pens.ac.id",
-          ),
+          content: Text("Gunakan email: nama@lecturer.pens.ac.id"),
         ),
       );
       return;
     }
 
     if (pass != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Kata sandi dan konfirmasi tidak sama")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Kata sandi tidak sama")));
       return;
     }
 
     setState(() => isLoading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() => isLoading = false);
+    try {
+      // ----------------------------------------------------------
+      // 1. Insert ke tabel users
+      // ----------------------------------------------------------
+      final user = await client
+          .from('users')
+          .insert({
+            'nama': widget.biodata['nama'],
+            'email': email,
+            'pass_hash': pass,
+            'role': 'dsn',
+          })
+          .select()
+          .maybeSingle();
+
+      if (user == null) throw "Insert user gagal";
+
+      final userId = user['id'];
+
+      // ----------------------------------------------------------
+      // 2. Insert ke tabel dosen (sekaligus simpan nama dosen)
+      // ----------------------------------------------------------
+      final dosen = await client
+          .from('dosen')
+          .insert({
+            'user_id': userId,
+            'nip': widget.biodata['nip'],
+            'status': 'active',
+            'email_recovery': widget.biodata['email_recovery'],
+            'phone': widget.biodata['phone'],
+            'nama': widget.biodata['nama'], // ← tambahan sesuai permintaan
+          })
+          .select()
+          .maybeSingle();
+
+      if (dosen == null) throw "Insert dosen gagal";
+
+      final dosenId = dosen['id'];
+
+      // ----------------------------------------------------------
+      // 3. Insert ke dosen_prodi (buat prodi jika belum ada)
+      // ----------------------------------------------------------
+      final List<String> listProdi = List<String>.from(widget.biodata['prodi']);
+
+      for (final prodiName in listProdi) {
+        // 3a. Cek apakah prodi sudah ada
+        var prodi = await client
+            .from('prodi')
+            .select()
+            .eq('nama', prodiName)
+            .maybeSingle();
+
+        // 3b. Jika tidak ada → buat baru
+        if (prodi == null) {
+          prodi = await client
+              .from('prodi')
+              .insert({'nama': prodiName})
+              .select()
+              .single();
+        }
+
+        // 3c. Insert relasi dosen-prodi
+        await client.from('dosen_prodi').insert({
+          'dosen_id': dosenId,
+          'prodi_id': prodi['id'],
+        });
+      }
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Akun dosen berhasil dibuat!")),
       );
 
       Navigator.pop(context);
-    });
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // biar form bisa scroll saat keyboard muncul
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
-          // ================= HEADER =================
           Container(
+            padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
-            color: const Color(0xFF1B4F7D), // biru header
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              children: const [
+            color: const Color(0xFF0D4C73),
+            child: const Column(
+              children: [
                 Text(
                   "PASS",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -96,16 +168,13 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
             ),
           ),
 
-          // ================= FORM =================
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Row untuk back button + judul
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
@@ -116,21 +185,21 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                         child: Text(
                           "Enter Account Name And Password",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
 
-                  // TextField Email
+                  const SizedBox(height: 25),
+
+                  const Text("Email PENS"),
                   TextField(
-                    controller: emailController,
+                    controller: emailC,
                     decoration: InputDecoration(
-                      labelText: "Email PENS",
-                      hintText: "nama@lucturer.pens.ac.id",
+                      hintText: "nama@lecturer.pens.ac.id",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -138,13 +207,12 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                   ),
                   const SizedBox(height: 15),
 
-                  // TextField Password
+                  const Text("Kata Sandi"),
                   TextField(
-                    controller: passController,
+                    controller: passC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Masukkan Kata Sandi",
-                      hintText: "minimal 8 karakter",
+                      hintText: "Minimal 8 karakter",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -152,36 +220,37 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                   ),
                   const SizedBox(height: 15),
 
-                  // TextField Confirm Password
+                  const Text("Konfirmasi Kata Sandi"),
                   TextField(
-                    controller: confirmController,
+                    controller: confirmC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Konfirmasi Kata Sandi",
-                      hintText: "masukkan kata sandi",
+                      hintText: "Masukkan kembali kata sandi",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
 
-                  // Tombol CREATE
+                  const SizedBox(height: 25),
+
                   SizedBox(
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black, // tombol hitam
-                        foregroundColor: Colors.white, // teks putih
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        backgroundColor: Colors.black,
                       ),
                       onPressed: isLoading ? null : createAccount,
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("CREATE"),
+                          : const Text(
+                              "CREATE",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -191,10 +260,10 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
         ],
       ),
 
-      // ================= FOOTER =================
       bottomNavigationBar: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        color: const Color(0xFF1B4F7D),
+        color: const Color(0xFF0D4C73),
         child: const Text(
           "Electronic Engineering\nPolytechnic Institute of Surabaya",
           textAlign: TextAlign.center,
