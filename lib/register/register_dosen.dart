@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_dosen.dart';
+import '../create/create_dosen.dart';
 
 class RegisterDosen extends StatefulWidget {
   const RegisterDosen({super.key});
