@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_mahasiswa.dart';
+import '../create/create_mahasiswa.dart';
 
 class RegisterMahasiswa extends StatefulWidget {
   const RegisterMahasiswa({super.key});
