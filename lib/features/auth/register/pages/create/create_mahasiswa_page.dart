@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../login_page.dart';
+import 'package:pass_pens/features/auth/login/login_page.dart';
+import 'package:pass_pens/features/auth/register/controllers/create_mahasiswa_controller.dart';
 
 class CreateMahasiswaPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
@@ -15,147 +15,31 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
   final emailController = TextEditingController();
   final passController = TextEditingController();
   final confirmController = TextEditingController();
+
   bool isLoading = false;
+  late final CreateMahasiswaController controller;
 
-  final supabase = Supabase.instance.client;
-
-  final Map<String, String> prodiToDomain = {
-    "D3 Teknik Informatika": "it",
-    "D4 Teknik Informatika": "it",
-    "D4 Teknik Komputer": "ce",
-    "D4 Sains Data Terapan": "ds",
-    "D4 Teknologi Rekayasa Multimedia": "met",
-    "D4 Teknologi Rekayasa Internet": "iet",
-    "D3 Multimedia Broadcasting": "mmb",
-    "D4 Teknologi Game": "gt",
-    "D3 Teknik Elektronika Industri": "iee",
-    "D4 Teknik Elektronika Industri": "iee",
-    "D3 Teknik Elektronika": "ee",
-    "D4 Teknik Elektronika": "ee",
-    "D4 Teknik Mekatronika": "me",
-    "D4 Sistem Pembangkit Energi": "pg",
-    "D3 Teknik Telekomunikasi": "te",
-    "D4 Teknik Telekomunikasi": "te",
-  };
-
-  bool isValidMahasiswaEmail(String email) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-    return email.endsWith("@$domain.student.pens.ac.id");
-  }
-
-  Future<void> createAccount() async {
-    final email = emailController.text.trim();
-    final pass = passController.text.trim();
-    final confirm = confirmController.text.trim();
-
-    if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua field harus diisi")));
-      return;
-    }
-
-    if (!isValidMahasiswaEmail(email)) {
-      final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Email mahasiswa tidak valid.\nGunakan: nama@$domain.student.pens.ac.id",
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (pass != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password dan konfirmasi tidak sama")),
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      final telepon = widget.biodata['telepon'];
-      final emailRecovery = widget.biodata['email_pemulihan'];
-      final prodiName = widget.biodata['prodi'];
-      int? prodiId = widget.biodata['prodi_id'];
-
-      // Cek / buat prodi
-      if (prodiId == null) {
-        final check = await supabase
-            .from('prodi')
-            .select()
-            .eq('nama', prodiName)
-            .maybeSingle();
-
-        if (check != null) {
-          prodiId = check['id'];
-        } else {
-          final inserted = await supabase
-              .from('prodi')
-              .insert({'nama': prodiName})
-              .select()
-              .single();
-          prodiId = inserted['id'];
-        }
-      }
-
-      // Insert user
-      final userInsert = await supabase
-          .from('users')
-          .insert({
-            'nama': widget.biodata['nama'],
-            'email': email,
-            'pass_hash': pass,
-            'role': 'mhs',
-            'status': 'aktif',
-            'email_recovery': emailRecovery,
-          })
-          .select()
-          .single();
-
-      final userId = userInsert['id'];
-
-      // Insert mahasiswa
-      await supabase.from('mahasiswa').insert({
-        'user_id': userId,
-        'nrp': widget.biodata['nrp'],
-        'nama': widget.biodata['nama'],
-        'email': email,
-        'phone': telepon,
-        'email_recovery': emailRecovery,
-        'angkatan': int.parse(widget.biodata['angkatan']),
-        'prodi': prodiName,
-        'prodi_id': prodiId,
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Akun mahasiswa berhasil dibuat!")),
-      );
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Gagal membuat akun: $e")));
-    }
-
-    setState(() => isLoading = false);
+  @override
+  void initState() {
+    super.initState();
+    controller = CreateMahasiswaController(
+      context: context,
+      biodata: widget.biodata,
+      emailC: emailController,
+      passC: passController,
+      confirmC: confirmController,
+      onLoadingChange: (v) => setState(() => isLoading = v),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
+    final domain = controller.prodiDomain(widget.biodata['prodi']);
 
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
+
       body: Column(
         children: [
           Container(
@@ -238,7 +122,7 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                     obscureText: true,
                     decoration: InputDecoration(
                       labelText: "Confirm Your Password",
-                      hintText: "Enter Your Password Again",
+                      hintText: "Enter again",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -253,11 +137,8 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
-                      onPressed: isLoading ? null : createAccount,
+                      onPressed: isLoading ? null : controller.createAccount,
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text("CREATE"),

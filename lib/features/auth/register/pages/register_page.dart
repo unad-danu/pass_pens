@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'register_dosen.dart';
-import 'register_mahasiswa.dart';
+import 'package:pass_pens/features/auth/register/pages/register_dosen_page.dart';
+import 'package:pass_pens/features/auth/register/pages/register_mahasiswa_page.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -16,8 +16,8 @@ class RegisterPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
             color: const Color(0xFF0D4C73),
-            child: Column(
-              children: const [
+            child: const Column(
+              children: [
                 Text(
                   "PASS",
                   style: TextStyle(
@@ -37,16 +37,14 @@ class RegisterPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // TOMBOL BACK (pindah ke sini)
+          // BACK BUTTON
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
               padding: const EdgeInsets.only(left: 10),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
@@ -55,7 +53,6 @@ class RegisterPage extends StatelessWidget {
           Image.asset("assets/icon_login.png", width: 180, height: 180),
 
           const SizedBox(height: 10),
-
           const Text(
             "Create Account",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -63,7 +60,7 @@ class RegisterPage extends StatelessWidget {
 
           const SizedBox(height: 15),
 
-          // CARD PILIHAN
+          // CARD PILIHAN ROLE
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Container(
@@ -86,14 +83,16 @@ class RegisterPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RegisterDosen(),
+                            builder: (_) => const RegisterDosenPage(),
                           ),
                         );
                       },
                       child: const Text("Dosen / Lecturer"),
                     ),
                   ),
+
                   const SizedBox(height: 10),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -106,7 +105,7 @@ class RegisterPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RegisterMahasiswa(),
+                            builder: (_) => const RegisterMahasiswaPage(),
                           ),
                         );
                       },

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/supabase_config.dart';
+import 'package:pass_pens/features/auth/register/controllers/create_dosen_controller.dart';
 
 class CreateDosenPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
@@ -17,125 +17,19 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
 
   bool isLoading = false;
 
-  bool isValidEmailDosen(String email) {
-    return email.endsWith("@lecturer.pens.ac.id");
-  }
+  late final CreateDosenController controller;
 
-  Future<void> createAccount() async {
-    final client = SupabaseConfig.client;
-
-    final email = emailC.text.trim();
-    final pass = passC.text.trim();
-    final confirm = confirmC.text.trim();
-
-    if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua field harus diisi")));
-      return;
-    }
-
-    if (!isValidEmailDosen(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Gunakan email: nama@lecturer.pens.ac.id"),
-        ),
-      );
-      return;
-    }
-
-    if (pass != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Kata sandi tidak sama")));
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      // ----------------------------------------------------------
-      // 1. Insert ke tabel users
-      // ----------------------------------------------------------
-      final user = await client
-          .from('users')
-          .insert({
-            'nama': widget.biodata['nama'],
-            'email': email,
-            'pass_hash': pass,
-            'role': 'dsn',
-          })
-          .select()
-          .maybeSingle();
-
-      if (user == null) throw "Insert user gagal";
-
-      final userId = user['id'];
-
-      // ----------------------------------------------------------
-      // 2. Insert ke tabel dosen (sekaligus simpan nama dosen)
-      // ----------------------------------------------------------
-      final dosen = await client
-          .from('dosen')
-          .insert({
-            'user_id': userId,
-            'nip': widget.biodata['nip'],
-            'status': 'active',
-            'email_recovery': widget.biodata['email_recovery'],
-            'phone': widget.biodata['phone'],
-            'nama': widget.biodata['nama'], // ← tambahan sesuai permintaan
-          })
-          .select()
-          .maybeSingle();
-
-      if (dosen == null) throw "Insert dosen gagal";
-
-      final dosenId = dosen['id'];
-
-      // ----------------------------------------------------------
-      // 3. Insert ke dosen_prodi (buat prodi jika belum ada)
-      // ----------------------------------------------------------
-      final List<String> listProdi = List<String>.from(widget.biodata['prodi']);
-
-      for (final prodiName in listProdi) {
-        // 3a. Cek apakah prodi sudah ada
-        var prodi = await client
-            .from('prodi')
-            .select()
-            .eq('nama', prodiName)
-            .maybeSingle();
-
-        // 3b. Jika tidak ada → buat baru
-        if (prodi == null) {
-          prodi = await client
-              .from('prodi')
-              .insert({'nama': prodiName})
-              .select()
-              .single();
-        }
-
-        // 3c. Insert relasi dosen-prodi
-        await client.from('dosen_prodi').insert({
-          'dosen_id': dosenId,
-          'prodi_id': prodi['id'],
-        });
-      }
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Akun dosen berhasil dibuat!")),
-      );
-
-      Navigator.pop(context);
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
+  @override
+  void initState() {
+    super.initState();
+    controller = CreateDosenController(
+      context: context,
+      biodata: widget.biodata,
+      emailC: emailC,
+      passC: passC,
+      confirmC: confirmC,
+      onLoadingChange: (value) => setState(() => isLoading = value),
+    );
   }
 
   @override
@@ -192,7 +86,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 25),
 
                   const Text("Email PENS"),
@@ -231,7 +124,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 25),
 
                   SizedBox(
@@ -241,7 +133,7 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                       ),
-                      onPressed: isLoading ? null : createAccount,
+                      onPressed: isLoading ? null : controller.createAccount,
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
@@ -259,7 +151,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
           ),
         ],
       ),
-
       bottomNavigationBar: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
