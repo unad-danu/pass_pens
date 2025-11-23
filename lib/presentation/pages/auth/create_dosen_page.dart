@@ -1,53 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../auth/login_page.dart';
 import '../../../core/supabase_config.dart';
-import 'login_page.dart';
 
-class CreateMahasiswaPage extends StatefulWidget {
+class CreateDosenPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
 
-  const CreateMahasiswaPage({super.key, required this.biodata});
+  const CreateDosenPage({super.key, required this.biodata});
 
   @override
-  State<CreateMahasiswaPage> createState() => _CreateMahasiswaPageState();
+  State<CreateDosenPage> createState() => _CreateDosenPageState();
 }
 
-class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
-  final emailController = TextEditingController();
-  final passController = TextEditingController();
-  final confirmController = TextEditingController();
+class _CreateDosenPageState extends State<CreateDosenPage> {
+  final emailC = TextEditingController();
+  final passC = TextEditingController();
+  final confirmC = TextEditingController();
+
   bool isLoading = false;
 
-  final supabase = SupabaseConfig.client;
-
-  final Map<String, String> prodiToDomain = {
-    "D3 Teknik Informatika": "it",
-    "D4 Teknik Informatika": "it",
-    "D4 Teknik Komputer": "ce",
-    "D4 Sains Data Terapan": "ds",
-    "D4 Teknologi Rekayasa Multimedia": "met",
-    "D4 Teknologi Rekayasa Internet": "iet",
-    "D3 Multimedia Broadcasting": "mmb",
-    "D4 Teknologi Game": "gt",
-    "D3 Teknik Elektronika Industri": "iee",
-    "D4 Teknik Elektronika Industri": "iee",
-    "D3 Teknik Elektronika": "ee",
-    "D4 Teknik Elektronika": "ee",
-    "D4 Teknik Mekatronika": "me",
-    "D4 Sistem Pembangkit Energi": "pg",
-    "D3 Teknik Telekomunikasi": "te",
-    "D4 Teknik Telekomunikasi": "te",
-  };
-
-  bool isValidMahasiswaEmail(String email) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-    return email.endsWith("@$domain.student.pens.ac.id");
+  bool isValidEmailDosen(String email) {
+    return email.endsWith("@lecturer.pens.ac.id");
   }
 
   Future<void> createAccount() async {
-    final email = emailController.text.trim();
-    final pass = passController.text.trim();
-    final confirm = confirmController.text.trim();
+    final client = SupabaseConfig.client;
+
+    final email = emailC.text.trim();
+    final pass = passC.text.trim();
+    final confirm = confirmC.text.trim();
 
     if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
       ScaffoldMessenger.of(
@@ -56,84 +37,88 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
       return;
     }
 
-    if (!isValidMahasiswaEmail(email)) {
-      final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
+    if (!isValidEmailDosen(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Email mahasiswa tidak valid.\nGunakan: nama@$domain.student.pens.ac.id",
-          ),
+        const SnackBar(
+          content: Text("Gunakan email: nama@lecturer.pens.ac.id"),
         ),
       );
       return;
     }
 
     if (pass != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password dan konfirmasi tidak sama")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Password tidak sama")));
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      final telepon = widget.biodata['phone'];
-      final emailRecovery = widget.biodata['email_recovery'];
-      final prodiName = widget.biodata['prodi'];
-      int? prodiId = widget.biodata['prodi_id'];
-
-      // cek prodi
-      if (prodiId == null) {
-        final check = await supabase
-            .from('prodi')
-            .select()
-            .eq('nama', prodiName)
-            .maybeSingle();
-
-        if (check != null) {
-          prodiId = check['id'];
-        } else {
-          final inserted = await supabase
-              .from('prodi')
-              .insert({'nama': prodiName})
-              .select()
-              .single();
-          prodiId = inserted['id'];
-        }
-      }
-
-      // insert users
-      final userInsert = await supabase
+      // Insert ke tabel users
+      final insertedUser = await client
           .from('users')
           .insert({
             'nama': widget.biodata['nama'],
             'email': email,
             'pass_hash': pass,
-            'role': 'mhs',
+            'role': 'dsn',
             'status': 'aktif',
-            'email_recovery': emailRecovery,
+            'email_recovery': widget.biodata['email_recovery'],
           })
           .select()
           .single();
 
-      final userId = userInsert['id'];
+      final userId = insertedUser['id'];
 
-      // insert mahasiswa
-      await supabase.from('mahasiswa').insert({
-        'user_id': userId,
-        'nrp': widget.biodata['nrp'],
-        'nama': widget.biodata['nama'],
-        'email': email,
-        'phone': telepon,
-        'email_recovery': emailRecovery,
-        'angkatan': int.parse(widget.biodata['angkatan']),
-        'prodi': prodiName,
-        'prodi_id': prodiId,
-      });
+      // Insert ke tabel dosen
+      final insertedDosen = await client
+          .from('dosen')
+          .insert({
+            'user_id': userId,
+            'nip': widget.biodata['nip'],
+            'nama': widget.biodata['nama'],
+            'email': email,
+            'phone': widget.biodata['phone'],
+            'email_recovery': widget.biodata['email_recovery'],
+            'status': 'active',
+          })
+          .select()
+          .single();
 
+      final dosenId = insertedDosen['id'];
+
+      // Insert prodi (satu / banyak)
+      final rawProdi = widget.biodata['prodi'];
+      final List<String> listProdi = rawProdi is List
+          ? List<String>.from(rawProdi)
+          : [rawProdi.toString()];
+
+      for (final prodiName in listProdi) {
+        final existingProdi = await client
+            .from('prodi')
+            .select()
+            .eq('nama', prodiName.trim())
+            .maybeSingle();
+
+        final prodi =
+            existingProdi ??
+            await client
+                .from('prodi')
+                .insert({'nama': prodiName.trim()})
+                .select()
+                .single();
+
+        await client.from('dosen_prodi').insert({
+          'dosen_id': dosenId,
+          'prodi_id': prodi['id'],
+        });
+      }
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Akun mahasiswa berhasil dibuat!")),
+        const SnackBar(content: Text("Akun dosen berhasil dibuat!")),
       );
 
       Navigator.pushAndRemoveUntil(
@@ -142,34 +127,33 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
         (route) => false,
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Gagal membuat akun: $e")));
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    setState(() => isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
-
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.symmetric(vertical: 25),
             width: double.infinity,
-            color: const Color(0xFF1B4F7D),
+            color: const Color(0xFF0D4C73),
             child: const Column(
               children: [
                 Text(
                   "PASS",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -181,10 +165,9 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -199,69 +182,66 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                         child: Text(
                           "Enter Account Name And Password",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 25),
+                  const Text("Email PENS"),
                   TextField(
-                    controller: emailController,
+                    controller: emailC,
                     decoration: InputDecoration(
-                      labelText: "PENS Email",
-                      hintText: "name@$domain.student.pens.ac.id",
+                      hintText: "nama@lecturer.pens.ac.id",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                   const SizedBox(height: 15),
-
+                  const Text("Password"),
                   TextField(
-                    controller: passController,
+                    controller: passC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Enter Your Password",
-                      hintText: "minimum 8 characters",
+                      hintText: "Minimal 8 karakter",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                   const SizedBox(height: 15),
-
+                  const Text("Konfirmasi Password"),
                   TextField(
-                    controller: confirmController,
+                    controller: confirmC,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Confirm Your Password",
-                      hintText: "Enter Your Password Again",
+                      hintText: "Masukkan kembali password",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 25),
                   SizedBox(
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
                       onPressed: isLoading ? null : createAccount,
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("CREATE"),
+                          : const Text(
+                              "CREATE",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -270,10 +250,10 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
           ),
         ],
       ),
-
       bottomNavigationBar: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        color: const Color(0xFF1B4F7D),
+        color: const Color(0xFF0D4C73),
         child: const Text(
           "Electronic Engineering\nPolytechnic Institute of Surabaya",
           textAlign: TextAlign.center,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../auth/register_page.dart';
 
-// IMPORT REGISTER PAGE
-import 'register_page.dart';
-
-// IMPORT HOME MAHASISWA (sekarang ada di presentation/pages/)
+// Pakai prefix agar tidak tabrakan
 import '../home_mahasiswa_page.dart' as mhs;
+import '../home_dosen_page.dart' as dsn;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passController = TextEditingController();
 
   bool _obscurePass = true;
+  bool loading = false;
 
   // ===================== POPUP ALERT =====================
   void showAlert(String title, String message) {
@@ -37,11 +38,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ===================== LOGIN VALIDATOR =====================
-  void validateLogin() {
+  // ===================== LOGIN SUPABASE =====================
+  Future<void> login() async {
     final email = emailController.text.trim().toLowerCase();
     final pass = passController.text.trim();
 
+    // Validasi format email PENS
     final RegExp pensRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z]+\.student\.pens\.ac\.id$',
     );
@@ -53,22 +55,53 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
-
     if (pass.isEmpty) {
       showAlert("Password Kosong", "Silakan isi password Anda.");
       return;
     }
 
-    // Dummy Login untuk testing
-    if (email == "test@trpl.student.pens.ac.id" && pass == "123456") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const mhs.HomeMahasiswaPage()),
-      );
-      return;
-    }
+    setState(() => loading = true);
 
-    showAlert("Login Gagal", "Email atau password salah!");
+    try {
+      // Login Supabase
+      final auth = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: pass,
+      );
+
+      final user = auth.user;
+      if (user == null) throw Exception("Login gagal!");
+
+      // Ambil role user dari tabel profiles
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('role')
+          .eq('email', email)
+          .maybeSingle();
+
+      if (profile == null) throw Exception("Role tidak ditemukan!");
+
+      final String role = profile['role'];
+
+      // Arahkan sesuai role
+      if (role == "dosen") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const dsn.HomeDosenPage()),
+        );
+      } else if (role == "mahasiswa") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const mhs.HomeMahasiswa()),
+        );
+      } else {
+        throw Exception("Role tidak valid!");
+      }
+    } catch (e) {
+      showAlert("Login Gagal", e.toString());
+    } finally {
+      setState(() => loading = false);
+    }
   }
 
   bool get canLogin =>
@@ -90,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ================= HEADER =================
+            // ============ HEADER ============ //
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -114,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // ================= BODY =================
+            // ============ BODY ============ //
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -125,7 +158,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: Column(
                   children: [
-                    // ICON
+                    const SizedBox(height: 10),
+
+                    // Icon circle
                     Container(
                       height: 150,
                       width: 150,
@@ -139,8 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.black54,
                       ),
                     ),
-
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
 
                     const Text(
                       "Enter Your PENS Email and Password",
@@ -150,10 +184,9 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-
                     const SizedBox(height: 24),
 
-                    // EMAIL FIELD
+                    // Email
                     TextField(
                       controller: emailController,
                       decoration: InputDecoration(
@@ -166,10 +199,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
-
                     const SizedBox(height: 16),
 
-                    // PASSWORD FIELD
+                    // Password
                     TextField(
                       controller: passController,
                       obscureText: _obscurePass,
@@ -186,18 +218,15 @@ class _LoginPageState extends State<LoginPage> {
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePass = !_obscurePass;
-                            });
-                          },
+                          onPressed: () =>
+                              setState(() => _obscurePass = !_obscurePass),
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 24),
 
-                    // LOGIN BUTTON
+                    // Login button
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -207,17 +236,20 @@ class _LoginPageState extends State<LoginPage> {
                               ? Colors.black
                               : Colors.grey,
                         ),
-                        onPressed: canLogin ? validateLogin : null,
-                        child: const Text(
-                          "LOGIN",
-                          style: TextStyle(color: Colors.white),
-                        ),
+                        onPressed: loading || !canLogin ? null : login,
+                        child: loading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "LOGIN",
+                                style: TextStyle(color: Colors.white),
+                              ),
                       ),
                     ),
 
                     const SizedBox(height: 16),
 
-                    // LINK TO REGISTER
                     Column(
                       children: [
                         const Text(
@@ -225,14 +257,12 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(color: Colors.grey),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterPage(),
-                              ),
-                            );
-                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterPage(),
+                            ),
+                          ),
                           child: const Text(
                             "Daftar akun disini",
                             style: TextStyle(
@@ -244,14 +274,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
 
-            // ================= FOOTER =================
+            // ============ FOOTER ============ //
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),

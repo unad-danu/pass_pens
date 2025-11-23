@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'presentation/themes.dart';
 import 'routes/app_routes.dart';
 
 class MyApp extends StatelessWidget {
@@ -10,14 +9,18 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      // Tema aplikasi (light mode)
-      theme: AppTheme.lightTheme,
+      // Tema agar tidak muncul layar biru di awal
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF0B5E86)),
+      ),
 
       // Routing
       routes: AppRoutes.routes,
       onGenerateRoute: AppRoutes.onGenerate,
 
-      // Halaman pertama yang dibuka
+      // Halaman pertama → LoginPage
       initialRoute: AppRoutes.login,
     );
   }

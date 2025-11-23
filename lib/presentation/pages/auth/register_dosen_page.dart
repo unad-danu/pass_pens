@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import '../auth/create_dosen_page.dart';
 
 class RegisterDosenPage extends StatefulWidget {
   const RegisterDosenPage({super.key});
@@ -53,7 +54,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
   @override
   void initState() {
     super.initState();
-
     _shakeFormController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -86,18 +86,16 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     _nipCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
-
     _shakeFormController.dispose();
     _shakeNamaController.dispose();
     _shakeNipController.dispose();
     _shakeProdiController.dispose();
     _shakePhoneController.dispose();
     _shakeEmailController.dispose();
-
     super.dispose();
   }
 
-  // ================= VALIDATION =================
+  // =============== VALIDASI ==================
   final _emailRegex = RegExp(
     r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
   );
@@ -110,8 +108,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
   String? validateNip(String v) {
     if (v.trim().isEmpty) return "NIP wajib diisi";
-    if (!RegExp(r'^[0-9]+$').hasMatch(v.trim())) return "NIP hanya angka";
-    if (v.trim().length < 6) return "NIP minimal 6 digit";
+    if (!RegExp(r'^[0-9]+$').hasMatch(v)) return "NIP hanya angka";
+    if (v.length < 6) return "NIP minimal 6 digit";
     return null;
   }
 
@@ -122,12 +120,9 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
   String? validatePhone(String v) {
     if (v.trim().isEmpty) return "Nomor telepon wajib diisi";
-    if (!RegExp(r'^[0-9]+$').hasMatch(v.replaceAll('-', '').trim())) {
+    if (!RegExp(r'^[0-9]+$').hasMatch(v.replaceAll('-', '')))
       return "Nomor telepon hanya angka";
-    }
-    if (v.replaceAll('-', '').trim().length < 8) {
-      return "Nomor telepon terlalu pendek";
-    }
+    if (v.replaceAll('-', '').length < 8) return "Nomor telepon terlalu pendek";
     return null;
   }
 
@@ -137,9 +132,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     return null;
   }
 
-  void _triggerShake(AnimationController c) {
-    c.forward(from: 0);
-  }
+  void _triggerShake(AnimationController c) => c.forward(from: 0);
 
   void _onSubmit() {
     final n = validateNama(_namaCtrl.text);
@@ -162,24 +155,34 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
       if (p != null) _triggerShake(_shakeProdiController);
       if (ph != null) _triggerShake(_shakePhoneController);
       if (e != null) _triggerShake(_shakeEmailController);
-
       _triggerShake(_shakeFormController);
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registrasi dosen berhasil (demo)")),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateDosenPage(
+          biodata: {
+            "nama": _namaCtrl.text.trim(),
+            "nip": _nipCtrl.text.trim(),
+            "phone": _phoneCtrl.text.trim(),
+            "email_recovery": _emailCtrl.text.trim(),
+            "prodi": selectedProdi, // tetap sebagai list
+          },
+        ),
+      ),
     );
   }
 
   InputDecoration fieldDeco(String label, String? err) {
     return InputDecoration(
       labelText: label,
+      errorText: err,
       floatingLabelStyle: const TextStyle(
         color: Colors.blue,
         fontWeight: FontWeight.bold,
       ),
-      errorText: err,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       focusedBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Colors.blue, width: 2),
@@ -194,7 +197,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
       backgroundColor: Colors.white,
       body: SafeArea(
         child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -211,8 +213,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         width: double.infinity,
                         color: const Color(0xFF0D4C73),
-                        child: Column(
-                          children: const [
+                        child: const Column(
+                          children: [
                             Text(
                               "PASS",
                               style: TextStyle(
@@ -235,9 +237,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                           padding: EdgeInsets.only(
                             left: 24,
                             right: 24,
-                            top: 8,
                             bottom:
-                                MediaQuery.of(context).viewInsets.bottom + 24,
+                                MediaQuery.of(context).viewInsets.bottom + 20,
                           ),
                           child: AnimatedBuilder(
                             animation: _shakeFormController,
@@ -252,31 +253,18 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      foregroundColor: Colors.black,
-                                    ),
-                                    onPressed: () => Navigator.pop(context),
-                                    icon: const Icon(
-                                      Icons.arrow_back,
-                                      size: 20,
-                                    ),
-                                    label: const Text(
-                                      "Back",
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                TextButton.icon(
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: const Icon(Icons.arrow_back, size: 20),
+                                  label: const Text(
+                                    "Back",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-
-                                Center(
+                                const Center(
                                   child: Text(
                                     "Enter Your Biodata",
                                     style: TextStyle(
@@ -285,10 +273,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                     ),
                                   ),
                                 ),
-
                                 const SizedBox(height: 22),
 
-                                // ======================= NAMA ==========================
                                 AnimatedBuilder(
                                   animation: _shakeNamaController,
                                   builder: (context, child) {
@@ -313,7 +299,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
-                                // ======================= NIP ==========================
                                 AnimatedBuilder(
                                   animation: _shakeNipController,
                                   builder: (context, child) {
@@ -336,7 +321,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
-                                // ======================= PRODI MULTI SELECT ==========================
                                 AnimatedBuilder(
                                   animation: _shakeProdiController,
                                   builder: (context, child) {
@@ -376,19 +360,19 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                     child: InputDecorator(
                                       decoration: InputDecoration(
                                         labelText: "Prodi yang Diajar",
-                                        floatingLabelBehavior:
-                                            selectedProdi.isEmpty
-                                            ? FloatingLabelBehavior.auto
-                                            : FloatingLabelBehavior.always,
+                                        errorText: errProdi,
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             10,
                                           ),
                                         ),
-                                        errorText: errProdi,
                                         prefixIcon: const Icon(
                                           Icons.school_outlined,
                                         ),
+                                        floatingLabelBehavior:
+                                            selectedProdi.isEmpty
+                                            ? FloatingLabelBehavior.auto
+                                            : FloatingLabelBehavior.always,
                                       ),
                                       isEmpty: selectedProdi.isEmpty,
                                       child: Text(
@@ -406,7 +390,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
-                                // ======================= PHONE ==========================
                                 AnimatedBuilder(
                                   animation: _shakePhoneController,
                                   builder: (context, child) {
@@ -434,7 +417,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
-                                // ======================= EMAIL ==========================
                                 AnimatedBuilder(
                                   animation: _shakeEmailController,
                                   builder: (context, child) {
@@ -461,7 +443,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 30),
 
-                                // ======================= BUTTON ==========================
                                 SizedBox(
                                   width: double.infinity,
                                   height: 48,

@@ -1,50 +1,33 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_appbar.dart';
-import 'presensi_dosen_page.dart';
-import 'rekap_matkul_dosen_page.dart';
 
 class DetailMatkulDosenPage extends StatelessWidget {
-  final String namaMatkul;
+  final String nama;
+  final String ruangan;
+  final String jam;
 
-  const DetailMatkulDosenPage({super.key, required this.namaMatkul});
+  const DetailMatkulDosenPage({
+    super.key,
+    required this.nama,
+    required this.ruangan,
+    required this.jam,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: namaMatkul),
+      appBar: AppBar(title: Text(nama)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.person_pin_circle),
-              label: const Text("Kelola Presensi"),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PresensiDosenPage(matkul: namaMatkul),
-                  ),
-                );
-              },
+            Text(
+              "Mata Kuliah: $nama",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-
-            const SizedBox(height: 16),
-
-            ElevatedButton.icon(
-              icon: const Icon(Icons.list_alt),
-              label: const Text("Lihat Rekap Presensi"),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        RekapMatkulDosenPage(namaMatkul: namaMatkul),
-                  ),
-                );
-              },
-            ),
+            const SizedBox(height: 12),
+            Text("Ruangan: $ruangan"),
+            Text("Jam: $jam"),
           ],
         ),
       ),

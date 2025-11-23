@@ -178,7 +178,7 @@ class RegisterPage extends StatelessWidget {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) =>
-                                            const RegisterMahasiswaPage(),
+                                            const RegisterMahasiswa(),
                                       ),
                                     );
                                   },
