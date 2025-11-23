@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'features/auth/login/login_page.dart';
+import 'presentation/themes.dart';
+import 'routes/app_routes.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -8,8 +9,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'PASS',
-      home: const LoginPage(),
+
+      // Tema aplikasi (light mode)
+      theme: AppTheme.lightTheme,
+
+      // Routing
+      routes: AppRoutes.routes,
+      onGenerateRoute: AppRoutes.onGenerate,
+
+      // Halaman pertama yang dibuka
+      initialRoute: AppRoutes.login,
     );
   }
 }
