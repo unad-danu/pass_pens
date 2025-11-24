@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/create_dosen_page.dart';
 
 class RegisterDosenPage extends StatefulWidget {
@@ -19,30 +20,33 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
   List<String> selectedProdi = [];
 
+  // PRODI DARI SUPABASE
+  List<String> listProdi = [];
+  bool _loadingProdi = true;
+  String? _loadError;
+
   String? errNama;
   String? errNip;
   String? errProdi;
   String? errPhone;
   String? errEmail;
 
-  final List<String> listProdi = [
-    "D3 Teknik Informatika",
-    "D4 Teknik Informatika",
-    "D4 Teknik Komputer",
-    "D4 Sains Data Terapan",
-    "D4 Teknologi Rekayasa Multimedia",
-    "D4 Teknologi Rekayasa Internet",
-    "D3 Multimedia Broadcasting",
-    "D4 Teknologi Game",
-    "D3 Teknik Elektronika Industri",
-    "D4 Teknik Elektronika Industri",
-    "D3 Teknik Elektronika",
-    "D4 Teknik Elektronika",
-    "D4 Teknik Mekatronika",
-    "D4 Sistem Pembangkit Energi",
-    "D3 Teknik Telekomunikasi",
-    "D4 Teknik Telekomunikasi",
-  ];
+  // FETCH PRODI DARI SUPABASE
+  Future<void> fetchProdi() async {
+    try {
+      final data = await Supabase.instance.client.from('prodi').select('nama');
+
+      setState(() {
+        listProdi = data.map<String>((p) => p['nama'] as String).toList();
+        _loadingProdi = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadError = "Gagal memuat data prodi";
+        _loadingProdi = false;
+      });
+    }
+  }
 
   late final AnimationController _shakeFormController;
   late final AnimationController _shakeNamaController;
@@ -54,6 +58,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
   @override
   void initState() {
     super.initState();
+    fetchProdi();
+
     _shakeFormController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -95,7 +101,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     super.dispose();
   }
 
-  // =============== VALIDASI ==================
+  // ================= VALIDASI ==================
+
   final _emailRegex = RegExp(
     r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
   );
@@ -168,7 +175,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
             "nip": _nipCtrl.text.trim(),
             "phone": _phoneCtrl.text.trim(),
             "email_recovery": _emailCtrl.text.trim(),
-            "prodi": selectedProdi, // tetap sebagai list
+            "prodi": selectedProdi,
           },
         ),
       ),
@@ -275,6 +282,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 22),
 
+                                // ================= NAMA =================
                                 AnimatedBuilder(
                                   animation: _shakeNamaController,
                                   builder: (context, child) {
@@ -299,6 +307,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
+                                // ================= NIP =================
                                 AnimatedBuilder(
                                   animation: _shakeNipController,
                                   builder: (context, child) {
@@ -321,6 +330,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
+                                // ============ PRODI DARI SUPABASE ============
                                 AnimatedBuilder(
                                   animation: _shakeProdiController,
                                   builder: (context, child) {
@@ -334,62 +344,91 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                       child: child,
                                     );
                                   },
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final results =
-                                          await showDialog<List<String>>(
-                                            context: context,
-                                            builder: (context) {
-                                              return MultiSelectDialog(
-                                                items: listProdi
-                                                    .map(
-                                                      (p) =>
-                                                          MultiSelectItem(p, p),
-                                                    )
-                                                    .toList(),
-                                                initialValue: selectedProdi,
-                                                confirmText: const Text("OK"),
-                                                cancelText: const Text("Batal"),
+                                  child: _loadingProdi
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        )
+                                      : _loadError != null
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Text(
+                                            _loadError!,
+                                            style: const TextStyle(
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        )
+                                      : GestureDetector(
+                                          onTap: () async {
+                                            final results =
+                                                await showDialog<List<String>>(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return MultiSelectDialog(
+                                                      items: listProdi
+                                                          .map(
+                                                            (p) =>
+                                                                MultiSelectItem(
+                                                                  p,
+                                                                  p,
+                                                                ),
+                                                          )
+                                                          .toList(),
+                                                      initialValue:
+                                                          selectedProdi,
+                                                      confirmText: const Text(
+                                                        "OK",
+                                                      ),
+                                                      cancelText: const Text(
+                                                        "Batal",
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+
+                                            if (results != null) {
+                                              setState(
+                                                () => selectedProdi = results,
                                               );
-                                            },
-                                          );
-                                      if (results != null) {
-                                        setState(() => selectedProdi = results);
-                                      }
-                                    },
-                                    child: InputDecorator(
-                                      decoration: InputDecoration(
-                                        labelText: "Prodi yang Diajar",
-                                        errorText: errProdi,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                            }
+                                          },
+                                          child: InputDecorator(
+                                            decoration: InputDecoration(
+                                              labelText: "Prodi yang Diajar",
+                                              errorText: errProdi,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              prefixIcon: const Icon(
+                                                Icons.school_outlined,
+                                              ),
+                                              floatingLabelBehavior:
+                                                  selectedProdi.isEmpty
+                                                  ? FloatingLabelBehavior.auto
+                                                  : FloatingLabelBehavior
+                                                        .always,
+                                            ),
+                                            isEmpty: selectedProdi.isEmpty,
+                                            child: Text(
+                                              selectedProdi.isEmpty
+                                                  ? ""
+                                                  : selectedProdi.join(", "),
+                                              style: TextStyle(
+                                                color: selectedProdi.isEmpty
+                                                    ? Colors.transparent
+                                                    : Colors.black,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        prefixIcon: const Icon(
-                                          Icons.school_outlined,
-                                        ),
-                                        floatingLabelBehavior:
-                                            selectedProdi.isEmpty
-                                            ? FloatingLabelBehavior.auto
-                                            : FloatingLabelBehavior.always,
-                                      ),
-                                      isEmpty: selectedProdi.isEmpty,
-                                      child: Text(
-                                        selectedProdi.isEmpty
-                                            ? ""
-                                            : selectedProdi.join(", "),
-                                        style: TextStyle(
-                                          color: selectedProdi.isEmpty
-                                              ? Colors.transparent
-                                              : Colors.black,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 ),
                                 const SizedBox(height: 20),
 
+                                // ================= PHONE =================
                                 AnimatedBuilder(
                                   animation: _shakePhoneController,
                                   builder: (context, child) {
@@ -417,6 +456,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                 ),
                                 const SizedBox(height: 20),
 
+                                // ================= EMAIL =================
                                 AnimatedBuilder(
                                   animation: _shakeEmailController,
                                   builder: (context, child) {

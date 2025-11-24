@@ -100,16 +100,18 @@ class _LoginPageState extends State<LoginPage> {
 
       final role = data['role'];
 
-      if (role == "mahasiswa") {
+      if (role == "mhs" || role == "mahasiswa") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const mhs.HomeMahasiswa()),
         );
-      } else {
+      } else if (role == "dsn" || role == "dosen") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const dsn.HomeDosenPage()),
         );
+      } else {
+        showAlert("Error", "Role tidak dikenali: $role");
       }
     } catch (e) {
       showAlert("Login Gagal", e.toString());

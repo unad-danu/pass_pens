@@ -12,12 +12,14 @@ import '../presentation/pages/auth/create_mahasiswa_page.dart';
 import '../presentation/pages/home_mahasiswa_page.dart';
 import '../presentation/pages/home_dosen_page.dart';
 
-// MENU & OTHER
+// MENU
 import '../presentation/pages/profile_page.dart';
 import '../presentation/pages/notification_page.dart';
 
+// WAJIB
+import '../presentation/pages/rekap_matkul_mahasiswa_page.dart';
+
 class AppRoutes {
-  // AUTH
   static const String login = '/login';
   static const String register = '/register';
   static const String registerMahasiswa = '/register-mahasiswa';
@@ -25,14 +27,14 @@ class AppRoutes {
   static const String createMahasiswa = '/create-mahasiswa';
   static const String createDosen = '/create-dosen';
 
-  // HOME
   static const String homeMahasiswa = '/home-mahasiswa';
   static const String homeDosen = '/home-dosen';
 
-  // MENU & OTHER
   static const String profile = '/profile';
   static const String notification = '/notification';
+  static const String rekapMhs = '/rekap_mhs';
 
+  // ===== DEFAULT ROUTES =====
   static Map<String, WidgetBuilder> routes = {
     login: (_) => const LoginPage(),
     register: (_) => const RegisterPage(),
@@ -42,12 +44,12 @@ class AppRoutes {
     homeDosen: (_) => const HomeDosenPage(),
     profile: (_) => const ProfilePage(),
     notification: (_) => const NotificationPage(),
-
-    // Dummy untuk route berbasis onGenerate
     createMahasiswa: (_) => const SizedBox(),
     createDosen: (_) => const SizedBox(),
+    rekapMhs: (_) => const RekapMatkulMahasiswaPage(), // ✅ tanpa args
   };
 
+  // ===== DYNAMIC ROUTES =====
   static Route<dynamic>? onGenerate(RouteSettings settings) {
     final args = settings.arguments;
 
@@ -67,11 +69,18 @@ class AppRoutes {
           );
         }
         return _errorRoute("Parameter createDosen tidak valid");
+
+      case rekapMhs:
+        // langsung tanpa args
+        return MaterialPageRoute(
+          builder: (_) => const RekapMatkulMahasiswaPage(),
+        );
     }
 
     return null;
   }
 
+  // ===== ERROR ROUTE =====
   static Route<dynamic> _errorRoute(String message) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(

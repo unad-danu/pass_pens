@@ -7,7 +7,6 @@ class HomeMahasiswa extends StatefulWidget {
   State<HomeMahasiswa> createState() => _HomeMahasiswaState();
 }
 
-// ================= MODEL + DATA DUMMY (ADA DI DALAM FILE INI) =================
 class Matkul {
   final String nama;
   final String dosen;
@@ -24,26 +23,15 @@ class Matkul {
 
 List<Matkul> mataKuliah = [
   Matkul(
-    nama: "Pemrograman Mobile",
-    dosen: "Ir. Ahmad, S.T., M.Eng",
-    tempat: "Ruang B303",
-    jadwal: "Senin, 09.00 - 11.30",
+    nama: "Praktikum Bahasa Pemrograman",
+    dosen: "",
+    tempat: "",
+    jadwal: "",
   ),
-  Matkul(
-    nama: "Sistem Embedded",
-    dosen: "Dr. Rina, S.T., M.T",
-    tempat: "Lab Embedded",
-    jadwal: "Selasa, 10.00 - 12.30",
-  ),
-  Matkul(
-    nama: "Jaringan Komputer",
-    dosen: "Prof. Dimas, S.T., Ph.D",
-    tempat: "Ruang C204",
-    jadwal: "Rabu, 08.00 - 10.00",
-  ),
+  Matkul(nama: "Bahasa Pemrograman", dosen: "", tempat: "", jadwal: ""),
+  Matkul(nama: "Workshop Sistem Analog", dosen: "", tempat: "", jadwal: ""),
 ];
 
-// ================= HALAMAN HOME =================
 class _HomeMahasiswaState extends State<HomeMahasiswa> {
   String search = '';
   bool ascending = true;
@@ -62,67 +50,54 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ================= HEADER =================
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF0B5E86),
         elevation: 0,
-        toolbarHeight: 90,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const SizedBox(height: 40, width: 40),
-            Column(
-              children: const [
-                Text(
-                  "PASS",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+        automaticallyImplyLeading: false,
+        toolbarHeight: 80,
+        title: const Center(
+          child: Column(
+            children: [
+              Text(
+                "PASS",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
-                  "PENS Attendance Smart System",
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40, width: 40),
-          ],
+              ),
+              Text(
+                "PENS Attendance Smart System",
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
 
-      // ================= BODY =================
       body: Column(
         children: [
           const SizedBox(height: 10),
 
-          // Back + Home
+          // BACK + HOME
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: () => Navigator.pop(context),
-              child: Row(
-                children: const [
-                  Icon(Icons.arrow_back),
-                  SizedBox(width: 8),
-                  Text(
-                    "Home",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
+            child: const Center(
+              child: Text(
+                "Home",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
           ),
 
           const SizedBox(height: 12),
 
-          // Search + Sort
+          // SEARCH + SORT
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
+                // SEARCH BAR
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -130,14 +105,23 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                       hintText: "Search",
                       filled: true,
                       fillColor: Colors.white,
-                      border: OutlineInputBorder(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.black38),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.black),
                       ),
                     ),
-                    onChanged: (value) => setState(() => search = value),
+                    onChanged: (v) => setState(() => search = v),
                   ),
                 ),
+
                 const SizedBox(width: 10),
+
+                // SORT BUTTON
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -155,7 +139,7 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
 
           const SizedBox(height: 10),
 
-          // ================= LIST MK =================
+          // LIST MK
           Expanded(
             child: ListView.builder(
               itemCount: filtered.length,
@@ -167,55 +151,40 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black26),
+                    border: Border.all(color: Colors.black45),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // TITLE BLACK BAR
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.black,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
-                          mk.nama,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Text(
+                            mk.nama,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text("Dosen : ${mk.dosen}"),
-                      Text("Tempat : ${mk.tempat}"),
-                      Text("Jadwal : ${mk.jadwal}"),
-                      const SizedBox(height: 8),
 
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          child: const Text("Detail >"),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailMahasiswa(matkul: mk),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      const Text("Dosen :", style: TextStyle(fontSize: 15)),
+                      const SizedBox(height: 4),
+                      const Text("Tempat :", style: TextStyle(fontSize: 15)),
+                      const SizedBox(height: 4),
+                      const Text("Jadwal :", style: TextStyle(fontSize: 15)),
                     ],
                   ),
                 );
@@ -225,7 +194,7 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
         ],
       ),
 
-      // ================= BOTTOM NAV =================
+      // BOTTOM NAV (tidak diubah)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: const Color(0xFF0B5E86),
@@ -236,22 +205,32 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
           switch (index) {
             case 0:
               break;
+
             case 1:
-              Navigator.pushNamed(context, '/jadwal_mhs');
+              // NOTIFIKASI
+              Navigator.pushNamed(context, '/notification');
               break;
+
             case 2:
-              Navigator.pushNamed(context, '/rekap_mhs');
+              // REKAP PRESENSI — HARUS KIRIM ARGUMEN
+              Navigator.pushNamed(
+                context,
+                '/rekap_mhs',
+                arguments: "Praktikum Bahasa Pemrograman",
+              );
               break;
+
             case 3:
-              Navigator.pushNamed(context, '/profile_mhs');
+              // PROFIL
+              Navigator.pushNamed(context, '/profile');
               break;
           }
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: "Jadwal",
+            icon: Icon(Icons.notifications),
+            label: "Notif",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.check_circle),
@@ -259,50 +238,6 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
         ],
-      ),
-    );
-  }
-}
-
-// ================= HALAMAN DETAIL MK (ADA DI DALAM FILE INI) =================
-class DetailMahasiswa extends StatelessWidget {
-  final Matkul matkul;
-
-  const DetailMahasiswa({super.key, required this.matkul});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(matkul.nama),
-        backgroundColor: const Color(0xFF0B5E86),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Mata Kuliah: ${matkul.nama}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "Dosen: ${matkul.dosen}",
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Tempat: ${matkul.tempat}",
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Jadwal: ${matkul.jadwal}",
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
       ),
     );
   }

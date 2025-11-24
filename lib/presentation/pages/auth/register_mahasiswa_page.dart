@@ -102,9 +102,6 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
     try {
       setState(() => loadingProdi = true);
 
-      print("SUPABASE URL: ${supabase.rest.url}");
-      print("QUERY PRODI JALAN...");
-
       final data = await supabase.from('prodi').select('id, nama');
       print("HASIL PRODI: $data");
 
