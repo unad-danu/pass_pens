@@ -61,7 +61,7 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Email mahasiswa tidak valid.\nGunakan: nama@$domain.student.pens.ac.id",
+            "Email tidak valid.\nGunakan: nama@$domain.student.pens.ac.id",
           ),
         ),
       );
@@ -78,12 +78,35 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
     setState(() => isLoading = true);
 
     try {
-      final telepon = widget.biodata['phone'];
-      final emailRecovery = widget.biodata['email_recovery'];
+      // 1. SIGN UP AUTH (DAPAT UUID)
+      final authRes = await supabase.auth.signUp(email: email, password: pass);
+
+      if (authRes.user == null) {
+        throw "Gagal membuat akun Supabase Auth";
+      }
+
+      final String authUid = authRes.user!.id; // UUID
+
+      // 2. INSERT KE TABEL USERS (ID AUTO INCREMENT)
+      final insertedUser = await supabase
+          .from('users')
+          .insert({
+            'id_auth': authUid,
+            'nama': widget.biodata['nama'],
+            'email': email,
+            'role': 'mhs',
+            'status': 'aktif',
+            'email_recovery': widget.biodata['email_recovery'],
+          })
+          .select()
+          .single();
+
+      final int userId = insertedUser['id']; // INTEGER!!
+
+      // 3. GET / INSERT PRODI
       final prodiName = widget.biodata['prodi'];
       int? prodiId = widget.biodata['prodi_id'];
 
-      // cek prodi
       if (prodiId == null) {
         final check = await supabase
             .from('prodi')
@@ -103,38 +126,22 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
         }
       }
 
-      // insert users
-      final userInsert = await supabase
-          .from('users')
-          .insert({
-            'nama': widget.biodata['nama'],
-            'email': email,
-            'pass_hash': pass,
-            'role': 'mhs',
-            'status': 'aktif',
-            'email_recovery': emailRecovery,
-          })
-          .select()
-          .single();
-
-      final userId = userInsert['id'];
-
-      // insert mahasiswa
+      // 4. INSERT KE MAHASISWA (PAKAI userId INTEGER)
       await supabase.from('mahasiswa').insert({
         'user_id': userId,
         'nrp': widget.biodata['nrp'],
         'nama': widget.biodata['nama'],
         'email': email,
-        'phone': telepon,
-        'email_recovery': emailRecovery,
+        'phone': widget.biodata['phone'],
+        'email_recovery': widget.biodata['email_recovery'],
         'angkatan': int.parse(widget.biodata['angkatan']),
         'prodi': prodiName,
         'prodi_id': prodiId,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Akun mahasiswa berhasil dibuat!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Akun berhasil dibuat!")));
 
       Navigator.pushAndRemoveUntil(
         context,

@@ -1,5 +1,5 @@
 class MahasiswaModel {
-  final String id; // user_id
+  final String id;
   final String nama;
   final String nrp;
   final String prodi;
@@ -19,25 +19,13 @@ class MahasiswaModel {
 
   factory MahasiswaModel.fromMap(Map<String, dynamic> map) {
     return MahasiswaModel(
-      id: map['id'],
-      nama: map['nama'],
-      nrp: map['nrp'],
-      prodi: map['prodi'],
-      angkatan: map['angkatan'],
-      emailRecovery: map['email_recovery'],
-      phone: map['phone'],
+      id: map["id"],
+      nama: map["nama"],
+      nrp: map["nrp"],
+      prodi: map["prodi"],
+      angkatan: map["angkatan"],
+      emailRecovery: map["email_recovery"],
+      phone: map["phone"],
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      "id": id,
-      "nama": nama,
-      "nrp": nrp,
-      "prodi": prodi,
-      "angkatan": angkatan,
-      "email_recovery": emailRecovery,
-      "phone": phone,
-    };
   }
 }

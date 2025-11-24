@@ -101,13 +101,20 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
   Future<void> _loadProdi() async {
     try {
       setState(() => loadingProdi = true);
-      final data = await supabase.from('prodi').select('nama');
-      listProdi = (data as List)
-          .map<String>((e) => e['nama'] as String)
-          .toList();
-      // ⚠ Tidak auto assign selectedProdi biarkan null untuk placeholder
+
+      print("SUPABASE URL: ${supabase.rest.url}");
+      print("QUERY PRODI JALAN...");
+
+      final data = await supabase.from('prodi').select('id, nama');
+      print("HASIL PRODI: $data");
+
+      setState(() {
+        listProdi = (data as List)
+            .map<String>((e) => e['nama'] as String)
+            .toList();
+      });
     } catch (e) {
-      // optional
+      print("ERROR LOAD PRODI: $e");
     } finally {
       if (mounted) setState(() => loadingProdi = false);
     }

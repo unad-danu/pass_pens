@@ -56,10 +56,20 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
     setState(() => isLoading = true);
 
     try {
-      // Insert ke tabel users
+      // 1. BUAT AKUN DI SUPABASE AUTH
+      final authRes = await client.auth.signUp(email: email, password: pass);
+
+      if (authRes.user == null) {
+        throw "Gagal membuat akun Auth Supabase";
+      }
+
+      final authUid = authRes.user!.id;
+
+      // 2. INSERT KE TABEL USERS
       final insertedUser = await client
           .from('users')
           .insert({
+            'id_auth': authUid, // <-- tambahan penting
             'nama': widget.biodata['nama'],
             'email': email,
             'pass_hash': pass,
@@ -72,7 +82,7 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
 
       final userId = insertedUser['id'];
 
-      // Insert ke tabel dosen
+      // (sisanya tetap sama)
       final insertedDosen = await client
           .from('dosen')
           .insert({
@@ -89,7 +99,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
 
       final dosenId = insertedDosen['id'];
 
-      // Insert prodi (satu / banyak)
       final rawProdi = widget.biodata['prodi'];
       final List<String> listProdi = rawProdi is List
           ? List<String>.from(rawProdi)

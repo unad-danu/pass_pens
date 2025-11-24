@@ -38,32 +38,49 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ===================== LOGIN SUPABASE =====================
+  // ===================== LOGIN SUPABASE (VERSI PERMINTAANMU) =====================
   Future<void> login() async {
-    final email = emailController.text.trim().toLowerCase();
-    final pass = passController.text.trim();
+    String email = emailController.text.trim().toLowerCase();
+    final String pass = passController.text.trim();
 
-    // Validasi format email PENS
-    final RegExp pensRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z]+\.student\.pens\.ac\.id$',
-    );
-
-    if (!pensRegex.hasMatch(email)) {
-      showAlert(
-        "Email Tidak Valid",
-        "Format email harus: nama@jurusan.student.pens.ac.id",
-      );
+    if (email.isEmpty || pass.isEmpty) {
+      showAlert("Data tidak lengkap", "Email dan password harus diisi.");
       return;
     }
-    if (pass.isEmpty) {
-      showAlert("Password Kosong", "Silakan isi password Anda.");
-      return;
+
+    // Ambil prefix sebelum @
+    final prefix = email.split('@')[0];
+
+    // ========= AUTO DOMAIN MAHASISWA =========
+    // Jika user hanya input "ce12345" tanpa domain
+    final mahasiswaPrefixes = [
+      "ce",
+      "it",
+      "elka",
+      "telkom",
+      "jkt",
+      "mj",
+      "jt",
+      "te",
+      "ti",
+    ];
+
+    // Jika tidak ada '@'
+    if (!email.contains("@")) {
+      // Jika mahasiswa (prefix mulai dari singkatan prodi)
+      if (mahasiswaPrefixes.any((p) => prefix.startsWith(p))) {
+        email = "$prefix@${prefix}.student.pens.ac.id";
+      }
+      // Jika dosen
+      else {
+        email = "$email@lecturer.pens.ac.id";
+      }
     }
 
     setState(() => loading = true);
 
     try {
-      // Login Supabase
+      // LOGIN Supabase
       final auth = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: pass,
@@ -72,30 +89,27 @@ class _LoginPageState extends State<LoginPage> {
       final user = auth.user;
       if (user == null) throw Exception("Login gagal!");
 
-      // Ambil role user dari tabel profiles
-      final profile = await Supabase.instance.client
-          .from('profiles')
+      // AMBIL ROLE DARI TABEL USERS
+      final data = await Supabase.instance.client
+          .from('users')
           .select('role')
-          .eq('email', email)
+          .eq('id_auth', user.id) // gunakan UUID
           .maybeSingle();
 
-      if (profile == null) throw Exception("Role tidak ditemukan!");
+      if (data == null) throw Exception("Role user tidak ditemukan!");
 
-      final String role = profile['role'];
+      final role = data['role'];
 
-      // Arahkan sesuai role
-      if (role == "dosen") {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const dsn.HomeDosenPage()),
-        );
-      } else if (role == "mahasiswa") {
+      if (role == "mahasiswa") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const mhs.HomeMahasiswa()),
         );
       } else {
-        throw Exception("Role tidak valid!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const dsn.HomeDosenPage()),
+        );
       }
     } catch (e) {
       showAlert("Login Gagal", e.toString());
@@ -123,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ============ HEADER ============ //
+            // HEADER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -147,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // ============ BODY ============ //
+            // BODY
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -279,7 +293,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // ============ FOOTER ============ //
+            // FOOTER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
