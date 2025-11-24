@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/detail_matkul_mahasiswa_page.dart'; // <-- tambahkan import ini
 
 class HomeMahasiswa extends StatefulWidget {
   const HomeMahasiswa({super.key});
@@ -24,18 +25,27 @@ class Matkul {
 List<Matkul> mataKuliah = [
   Matkul(
     nama: "Praktikum Bahasa Pemrograman",
-    dosen: "",
-    tempat: "",
-    jadwal: "",
+    dosen: "Pak A",
+    tempat: "Gedung D201",
+    jadwal: "08:00 - 10:00",
   ),
-  Matkul(nama: "Bahasa Pemrograman", dosen: "", tempat: "", jadwal: ""),
-  Matkul(nama: "Workshop Sistem Analog", dosen: "", tempat: "", jadwal: ""),
+  Matkul(
+    nama: "Bahasa Pemrograman",
+    dosen: "Bu B",
+    tempat: "Gedung D202",
+    jadwal: "10:00 - 12:00",
+  ),
+  Matkul(
+    nama: "Workshop Sistem Analog",
+    dosen: "Pak C",
+    tempat: "Gedung D301",
+    jadwal: "13:00 - 15:00",
+  ),
 ];
 
 class _HomeMahasiswaState extends State<HomeMahasiswa> {
   String search = '';
   bool ascending = true;
-  int currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -79,15 +89,9 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
         children: [
           const SizedBox(height: 10),
 
-          // BACK + HOME
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: const Center(
-              child: Text(
-                "Home",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
+          const Text(
+            "Home",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 12),
@@ -97,7 +101,6 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                // SEARCH BAR
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -105,7 +108,6 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                       hintText: "Search",
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(color: Colors.black38),
@@ -121,7 +123,6 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
 
                 const SizedBox(width: 10),
 
-                // SORT BUTTON
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -139,104 +140,82 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
 
           const SizedBox(height: 10),
 
-          // LIST MK
           Expanded(
             child: ListView.builder(
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final mk = filtered[index];
 
-                return Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black45),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // TITLE BLACK BAR
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(6),
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DetailMatkulMahasiswaPage(
+                          namaMatkul: mk.nama,
+                          ruangan: mk.tempat,
+                          jam: mk.jadwal,
+                          latitude: 0.0, // nanti isi dari supabase
+                          longitude: 0.0, // nanti isi dari supabase
                         ),
-                        child: Center(
-                          child: Text(
-                            mk.nama,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.black45),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // TITLE BLACK BAR
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              mk.nama,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 10),
-                      const Text("Dosen :", style: TextStyle(fontSize: 15)),
-                      const SizedBox(height: 4),
-                      const Text("Tempat :", style: TextStyle(fontSize: 15)),
-                      const SizedBox(height: 4),
-                      const Text("Jadwal :", style: TextStyle(fontSize: 15)),
-                    ],
+                        const SizedBox(height: 10),
+                        Text(
+                          "Dosen : ${mk.dosen}",
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Tempat : ${mk.tempat}",
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Jadwal : ${mk.jadwal}",
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
-        ],
-      ),
-
-      // BOTTOM NAV (tidak diubah)
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: const Color(0xFF0B5E86),
-        unselectedItemColor: Colors.black54,
-        onTap: (index) {
-          setState(() => currentIndex = index);
-
-          switch (index) {
-            case 0:
-              break;
-
-            case 1:
-              // NOTIFIKASI
-              Navigator.pushNamed(context, '/notification');
-              break;
-
-            case 2:
-              // REKAP PRESENSI — HARUS KIRIM ARGUMEN
-              Navigator.pushNamed(
-                context,
-                '/rekap_mhs',
-                arguments: "Praktikum Bahasa Pemrograman",
-              );
-              break;
-
-            case 3:
-              // PROFIL
-              Navigator.pushNamed(context, '/profile');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notif",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: "Presensi",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
         ],
       ),
     );

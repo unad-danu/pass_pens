@@ -1,12 +1,21 @@
+// presensi_mahasiswa_page.dart
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../data/services/face_recognition_service.dart';
 import '../../core/helpers.dart';
-import '../../routes/app_routes.dart';
 
+// ---------- Top-level helper for compute() ----------
+Future<bool> _isFullFaceIsolate(String imagePath) async {
+  // NOTE: instantiate FaceRecognitionService inside isolate
+  final service = FaceRecognitionService();
+  return service.isFullFace(File(imagePath));
+}
+
+// ---------- Page ----------
 class PresensiMahasiswaPage extends StatefulWidget {
   final String matkul;
   final double latKelas;
@@ -24,112 +33,153 @@ class PresensiMahasiswaPage extends StatefulWidget {
 }
 
 class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
-  final picker = ImagePicker();
-  final faceService = FaceRecognitionService();
+  final ImagePicker _picker = ImagePicker();
 
   File? imageFile;
   bool loading = false;
 
-  int currentIndex = 2; // Presensi berada di posisi ke-2 (0,1,**2**,3)
-
-  void handleNavTap(int index) {
-    setState(() => currentIndex = index);
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, AppRoutes.homeMahasiswa);
-        break;
-
-      case 1:
-        Navigator.pushReplacementNamed(context, AppRoutes.notification);
-        break;
-
-      case 2:
-        // halaman ini → tidak pindah
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, AppRoutes.profile);
-        break;
-    }
+  // ------------ Permission helpers ------------
+  Future<bool> _ensureCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) return true;
+    final res = await Permission.camera.request();
+    return res.isGranted;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    requestPermissions();
+  Future<bool> _ensureLocationPermission() async {
+    // Check permission
+    var status = await Permission.locationWhenInUse.status;
+    if (status.isGranted) return true;
+
+    // Request permission
+    final res = await Permission.locationWhenInUse.request();
+    if (res.isGranted) return true;
+
+    return false;
   }
 
-  Future<void> requestPermissions() async {
-    await [Permission.camera, Permission.locationWhenInUse].request();
+  Future<bool> _ensureLocationServiceEnabled() async {
+    final enabled = await Geolocator.isLocationServiceEnabled();
+    if (enabled) return true;
+    // Prompt user to enable location (can't programmatically enable)
+    return false;
   }
 
+  // ------------ Photo capture ------------
   Future<void> takePhoto() async {
-    if (await Permission.camera.isDenied) {
+    final ok = await _ensureCameraPermission();
+    if (!ok) {
       Helpers.showSnackBar(context, "Izin kamera ditolak!");
       return;
     }
 
-    final img = await picker.pickImage(source: ImageSource.camera);
-    if (img == null) return;
-
-    setState(() => imageFile = File(img.path));
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      if (!mounted) return;
+      setState(() => imageFile = File(picked.path));
+    } catch (e) {
+      Helpers.showSnackBar(context, "Gagal ambil foto: $e");
+    }
   }
 
+  // ------------ Submit flow (safe) ------------
   Future<void> submit() async {
     if (imageFile == null) {
       Helpers.showSnackBar(context, "Ambil foto terlebih dahulu!");
       return;
     }
 
-    if (await Permission.locationWhenInUse.isDenied) {
+    // Ensure location permission
+    if (!await _ensureLocationPermission()) {
       Helpers.showSnackBar(context, "Izin lokasi ditolak!");
       return;
     }
 
+    // Ensure location service enabled
+    if (!await _ensureLocationServiceEnabled()) {
+      Helpers.showSnackBar(context, "Layanan lokasi mati. Aktifkan GPS.");
+      return;
+    }
+
+    // Start loading
+    if (!mounted) return;
     setState(() => loading = true);
 
-    final isClear = await faceService.isFullFace(imageFile!);
-    if (!isClear) {
-      setState(() => loading = false);
-      Helpers.showSnackBar(context, "Wajah tidak terdeteksi jelas!");
-      return;
-    }
-
-    Position? pos;
-
     try {
-      pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+      // 1) Face recognition in isolate (compute)
+      final imagePath = imageFile!.path;
+      final bool isClear = await compute(
+        _isFullFaceIsolate,
+        imagePath,
+      ).timeout(const Duration(seconds: 8), onTimeout: () => false);
+
+      if (!isClear) {
+        if (!mounted) return;
+        setState(() => loading = false);
+        Helpers.showSnackBar(context, "Wajah tidak terdeteksi jelas!");
+        return;
+      }
+
+      // 2) Get current position with timeout and fallback
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        ).timeout(const Duration(seconds: 6));
+      } catch (e) {
+        // fallback to last known position
+        try {
+          pos = await Geolocator.getLastKnownPosition();
+        } catch (_) {
+          pos = null;
+        }
+      }
+
+      if (pos == null) {
+        if (!mounted) return;
+        setState(() => loading = false);
+        Helpers.showSnackBar(context, "Lokasi tidak ditemukan!");
+        return;
+      }
+
+      // 3) Distance check (in meters)
+      final distance = Geolocator.distanceBetween(
+        pos.latitude,
+        pos.longitude,
+        widget.latKelas,
+        widget.lonKelas,
       );
+
+      if (distance > 100) {
+        if (!mounted) return;
+        setState(() => loading = false);
+        Helpers.showSnackBar(context, "Anda berada di luar radius kelas!");
+        return;
+      }
+
+      // 4) Simulate network / finalizing (kept small)
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      if (!mounted) return;
+      setState(() => loading = false);
+      Helpers.showSnackBar(context, "Presensi berhasil!");
+
+      // Kembali ke halaman sebelumnya
+      Navigator.pop(context);
     } catch (e) {
-      pos = null;
+      if (mounted) setState(() => loading = false);
+      Helpers.showSnackBar(context, "Terjadi kesalahan: $e");
     }
+  }
 
-    if (pos == null) {
-      setState(() => loading = false);
-      Helpers.showSnackBar(context, "Lokasi tidak ditemukan!");
-      return;
-    }
-
-    final distance = Geolocator.distanceBetween(
-      pos.latitude,
-      pos.longitude,
-      widget.latKelas,
-      widget.lonKelas,
-    );
-
-    if (distance > 100) {
-      setState(() => loading = false);
-      Helpers.showSnackBar(context, "Anda berada di luar radius kelas!");
-      return;
-    }
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() => loading = false);
-    Helpers.showSnackBar(context, "Presensi berhasil!");
-    Navigator.pop(context);
+  @override
+  void dispose() {
+    imageFile?.delete().ignore(); // attempt cleanup (non-blocking)
+    super.dispose();
   }
 
   @override
@@ -137,9 +187,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // =====================================================
-      // HEADER (sama persis NotificationPage)
-      // =====================================================
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B5E86),
         elevation: 0,
@@ -163,23 +210,17 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
         ),
       ),
 
-      // =====================================================
-      // BODY — mengikuti gaya NOTIFICATION CARD STYLE
-      // =====================================================
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             const SizedBox(height: 12),
-
             Text(
               "Presensi - ${widget.matkul}",
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 20),
 
-            // CARD GAYA NOTIF
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -188,7 +229,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
               ),
               child: Column(
                 children: [
-                  // Header card (hitam seperti notif)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -210,7 +250,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
 
                   const SizedBox(height: 20),
 
-                  // FOTO PREVIEW
                   Container(
                     height: 250,
                     width: double.infinity,
@@ -233,24 +272,26 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
 
                   const SizedBox(height: 20),
 
-                  // TOMBOL AMBIL FOTO
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: takePhoto,
+                      onPressed: loading ? null : takePhoto,
                       child: const Text("Ambil Foto Selfie"),
                     ),
                   ),
 
                   const SizedBox(height: 12),
 
-                  // TOMBOL SUBMIT
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: loading ? null : submit,
                       child: loading
-                          ? const CircularProgressIndicator()
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text("Submit Presensi"),
                     ),
                   ),
@@ -259,28 +300,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
             ),
           ],
         ),
-      ),
-
-      // =====================================================
-      // BOTTOM NAV — 100% sama NotificationPage
-      // =====================================================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: const Color(0xFF0B5E86),
-        unselectedItemColor: Colors.black54,
-        onTap: handleNavTap,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notif",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: "Presensi",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
-        ],
       ),
     );
   }

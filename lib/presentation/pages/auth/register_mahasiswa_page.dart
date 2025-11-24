@@ -168,8 +168,8 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
       "nrp": nrpC.text.trim(),
       "prodi": selectedProdi,
       "angkatan": selectedAngkatan,
-      "telepon": telpC.text.trim(),
-      "email_pemulihan": recoveryC.text.trim(),
+      "phone": telpC.text.trim(),
+      "email_recovery": recoveryC.text.trim(),
     };
 
     Navigator.push(
@@ -239,10 +239,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
                         TextButton.icon(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(Icons.arrow_back, size: 20),
-                          label: const Text(
-                            "Back",
-                            style: TextStyle(fontSize: 15),
-                          ),
+                          label: const Text("", style: TextStyle(fontSize: 15)),
                         ),
                         const Center(
                           child: Text(

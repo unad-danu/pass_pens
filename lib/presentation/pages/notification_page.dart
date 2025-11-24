@@ -1,41 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart';
 
-class NotificationPage extends StatefulWidget {
+class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
-
-  @override
-  State<NotificationPage> createState() => _NotificationPageState();
-}
-
-class _NotificationPageState extends State<NotificationPage> {
-  int currentIndex = 1; // Notifikasi ada di posisi ke-1
-
-  void handleNavTap(int index) {
-    setState(() => currentIndex = index);
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, AppRoutes.homeMahasiswa);
-        break;
-
-      case 1:
-        // halaman ini → tidak pindah
-        break;
-
-      case 2:
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.rekapMhs,
-          arguments: "Praktikum Bahasa Pemrograman",
-        );
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, AppRoutes.profile);
-        break;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,25 +63,6 @@ class _NotificationPageState extends State<NotificationPage> {
               ],
             ),
           ),
-        ],
-      ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: const Color(0xFF0B5E86),
-        unselectedItemColor: Colors.black54,
-        onTap: handleNavTap,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notif",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: "Presensi",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
         ],
       ),
     );

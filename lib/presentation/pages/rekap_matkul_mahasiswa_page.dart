@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart';
 
 class RekapMatkulMahasiswaPage extends StatefulWidget {
   const RekapMatkulMahasiswaPage({super.key});
@@ -10,8 +9,7 @@ class RekapMatkulMahasiswaPage extends StatefulWidget {
 }
 
 class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
-  int currentIndex = 2; // Rekap berada di posisi ke-2
-  String? selectedMatkul; // Mata kuliah yang dipilih
+  String? selectedMatkul;
 
   final List<String> listMatkul = [
     "Mobile Programming",
@@ -19,56 +17,34 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
     "Jaringan Komputer",
   ];
 
-  void handleNavTap(int index) {
-    setState(() => currentIndex = index);
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, AppRoutes.homeMahasiswa);
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, AppRoutes.notification);
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.pushReplacementNamed(context, AppRoutes.profile);
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ===== HEADER mirip notifikasi =====
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B5E86),
         elevation: 0,
-        automaticallyImplyLeading: false,
         toolbarHeight: 80,
-        title: const Center(
-          child: Column(
-            children: [
-              Text(
-                "PASS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+        title: const Column(
+          children: [
+            Text(
+              "PASS",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-              Text(
-                "PENS Attendance Smart System",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
+            ),
+            Text(
+              "PENS Attendance Smart System",
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ],
         ),
+        centerTitle: true,
       ),
 
-      // ===== BODY =====
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -80,6 +56,7 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
+
           const SizedBox(height: 12),
 
           // Dropdown mata kuliah
@@ -111,7 +88,6 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
 
           const SizedBox(height: 16),
 
-          // Daftar pertemuan
           Expanded(
             child: selectedMatkul == null
                 ? const Center(child: Text("Silahkan pilih mata kuliah"))
@@ -140,31 +116,10 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
           ),
         ],
       ),
-
-      // ===== BOTTOM NAV BAR =====
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: const Color(0xFF0B5E86),
-        unselectedItemColor: Colors.black54,
-        onTap: handleNavTap,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notif",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: "Presensi",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
-        ],
-      ),
     );
   }
 }
 
-// Widget pertemuan mirip card notifikasi
 class _PertemuanCard extends StatelessWidget {
   final String pertemuan;
   final String status;
@@ -205,6 +160,7 @@ class _PertemuanCard extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 10),
           Text("Status: $status", style: const TextStyle(fontSize: 15)),
           const SizedBox(height: 4),

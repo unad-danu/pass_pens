@@ -10,8 +10,11 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final supabase = Supabase.instance.client;
-  Map<String, dynamic>? userData;
+
+  Map<String, dynamic>? userData; // data mahasiswa & dosen
+  List<String> prodiList = []; // khusus dosen
   bool isLoading = true;
+  String role = ""; // mhs / dsn
 
   @override
   void initState() {
@@ -23,10 +26,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final authUser = supabase.auth.currentUser;
     if (authUser == null) return;
 
-    // 1. Cari user_id integer dari tabel users
+    // ==============================
+    // 1. Ambil role user dari tabel users
+    // ==============================
     final userRow = await supabase
         .from('users')
-        .select('id')
+        .select('id, role')
         .eq('id_auth', authUser.id)
         .maybeSingle();
 
@@ -36,22 +41,62 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     final int userId = userRow['id'];
+    role = userRow['role'];
 
-    // 2. Ambil data mahasiswa pakai user_id
-    final response = await supabase
-        .from('mahasiswa')
-        .select()
-        .eq('user_id', userId)
-        .maybeSingle();
+    // ==============================
+    // 2. Jika MAHASISWA
+    // ==============================
+    if (role == "mhs") {
+      final res = await supabase
+          .from('mahasiswa')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
 
-    if (!mounted) return;
+      setState(() {
+        userData = res;
+        prodiList = []; // mahasiswa tidak perlu list prodi
+        isLoading = false;
+      });
+      return;
+    }
 
-    setState(() {
-      userData = response;
-      isLoading = false;
-    });
+    // ==============================
+    // 3. Jika DOSEN → Ambil relasi prodi
+    // ==============================
+    if (role == "dsn") {
+      final res = await supabase
+          .from('dosen')
+          .select('''
+            id,
+            nama,
+            email,
+            phone,
+            nip,
+            email_recovery,
+            dosen_prodi (
+              prodi ( nama )
+            )
+          ''')
+          .eq('user_id', userId)
+          .single();
+
+      final List<String> list = (res['dosen_prodi'] as List)
+          .map((dp) => dp['prodi']['nama'] as String)
+          .toList();
+
+      setState(() {
+        userData = res;
+        prodiList = list;
+        isLoading = false;
+      });
+      return;
+    }
   }
 
+  // ==============================
+  // Fungsi untuk cari kelas mahasiswa
+  // ==============================
   String getKelas(String nrp) {
     if (nrp.length < 3) return "-";
     int last = int.tryParse(nrp.substring(nrp.length - 3)) ?? 0;
@@ -66,7 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _logout() async {
     await supabase.auth.signOut();
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
   }
 
   Widget buildItem(String title, String value) {
@@ -95,7 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: const Color(0xFF0B5E86),
         elevation: 2,
         title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               "PASS",
@@ -112,11 +156,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
         toolbarHeight: 70,
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
 
       body: isLoading
@@ -128,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// PROFILE HEADER
+                  // ================= PROFILE HEADER =================
                   Row(
                     children: [
                       const CircleAvatar(
@@ -165,18 +204,47 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 25),
 
-                  /// INFORMASI DETAIL
-                  buildItem("Nama Lengkap", data['nama'] ?? "-"),
-                  buildItem("NRP", data['nrp'] ?? "-"),
-                  buildItem("Kelas", getKelas(data['nrp'] ?? "")),
-                  buildItem("Prodi", data['prodi'] ?? "-"),
-                  buildItem("Angkatan", "${data['angkatan'] ?? '-'}"),
-                  buildItem("Nomor Telepon", data['phone'] ?? "-"),
-                  buildItem("Recovery E-mail", data['email_recovery'] ?? "-"),
+                  // ================= DATA MAHASISWA =================
+                  if (role == "mhs") ...[
+                    buildItem("Nama Lengkap", data['nama']),
+                    buildItem("NRP", data['nrp']),
+                    buildItem("Kelas", getKelas(data['nrp'])),
+                    buildItem("Prodi", data['prodi']),
+                    buildItem("Angkatan", "${data['angkatan']}"),
+                    buildItem("Nomor Telepon", data['phone']),
+                    buildItem("Recovery Email", data['email_recovery']),
+                  ],
+
+                  // ================= DATA DOSEN =================
+                  if (role == "dsn") ...[
+                    buildItem("NIP", data['nip'] ?? "-"),
+                    buildItem("Nama", data['nama'] ?? "-"),
+                    buildItem("Nomor Telepon", data['phone'] ?? "-"),
+                    buildItem("Recovery Email", data['email_recovery'] ?? "-"),
+
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Prodi yang Diajar:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Wrap(
+                      spacing: 8,
+                      children: prodiList
+                          .map((p) => Chip(label: Text(p)))
+                          .toList(),
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
 
                   const SizedBox(height: 35),
 
-                  /// LOGOUT BUTTON
+                  // ================= LOGOUT =================
                   Center(
                     child: ElevatedButton(
                       onPressed: _logout,
@@ -196,8 +264,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
             ),

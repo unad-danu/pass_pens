@@ -264,7 +264,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                   onPressed: () => Navigator.pop(context),
                                   icon: const Icon(Icons.arrow_back, size: 20),
                                   label: const Text(
-                                    "Back",
+                                    "",
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w500,

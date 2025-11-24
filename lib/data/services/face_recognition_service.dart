@@ -4,7 +4,6 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class FaceRecognitionService {
   final options = FaceDetectorOptions(
     enableClassification: true,
-    enableTracking: false,
     enableContours: true,
     performanceMode: FaceDetectorMode.accurate,
   );
@@ -13,27 +12,29 @@ class FaceRecognitionService {
     final faceDetector = FaceDetector(options: options);
     final inputImage = InputImage.fromFile(imageFile);
 
-    final faces = await faceDetector.processImage(inputImage);
+    try {
+      final faces = await faceDetector.processImage(inputImage);
 
-    // Tidak ada wajah
-    if (faces.isEmpty) return false;
+      if (faces.isEmpty) return false;
 
-    // Ambil wajah pertama
-    final face = faces.first;
+      final face = faces.first;
+      final box = face.boundingBox;
 
-    // Gunakan bounding box sebagai acuan "full face"
-    final boundingBox = face.boundingBox;
+      // Cek ukuran wajah minimal (lebih realistis)
+      if (box.width < 80 || box.height < 80) {
+        return false;
+      }
 
-    // Penilaian sederhana: ukuran wajah cukup besar dan tidak terlalu miring
-    if (boundingBox.width < 120 || boundingBox.height < 120) {
+      // Cek kemiringan kepala
+      final angleY = face.headEulerAngleY ?? 0;
+      if (angleY.abs() > 25) return false;
+
+      return true;
+    } catch (e) {
       return false;
+    } finally {
+      // ini yang benar
+      faceDetector.close();
     }
-
-    // Optional: cek apakah wajah terlihat frontal (angle kecil)
-    if (face.headEulerAngleY != null && face.headEulerAngleY!.abs() > 20)
-      return false;
-
-    await faceDetector.close();
-    return true;
   }
 }

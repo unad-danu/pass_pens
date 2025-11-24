@@ -72,7 +72,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
             'id_auth': authUid, // <-- tambahan penting
             'nama': widget.biodata['nama'],
             'email': email,
-            'pass_hash': pass,
             'role': 'dsn',
             'status': 'aktif',
             'email_recovery': widget.biodata['email_recovery'],

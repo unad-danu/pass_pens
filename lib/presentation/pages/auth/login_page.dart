@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/register_page.dart';
+import '../../widgets/main_navigation.dart';
 
 // Pakai prefix agar tidak tabrakan
 import '../home_mahasiswa_page.dart' as mhs;
@@ -100,15 +101,16 @@ class _LoginPageState extends State<LoginPage> {
 
       final role = data['role'];
 
+      // ============= MASUK KE MAIN NAVIGATION =============
       if (role == "mhs" || role == "mahasiswa") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const mhs.HomeMahasiswa()),
+          MaterialPageRoute(builder: (_) => MainNavigation(role: "mahasiswa")),
         );
       } else if (role == "dsn" || role == "dosen") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const dsn.HomeDosenPage()),
+          MaterialPageRoute(builder: (_) => MainNavigation(role: "dosen")),
         );
       } else {
         showAlert("Error", "Role tidak dikenali: $role");
@@ -207,7 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                       controller: emailController,
                       decoration: InputDecoration(
                         labelText: "PENS Email",
-                        hintText: "nama@jurusan.student.pens.ac.id",
+                        hintText: "Your PENS email address",
                         prefixIcon: const Icon(Icons.email),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
