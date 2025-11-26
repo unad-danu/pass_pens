@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_appbar.dart';
 
 class RekapMatkulDosenPage extends StatefulWidget {
   const RekapMatkulDosenPage({super.key});
@@ -19,30 +20,7 @@ class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 80,
-        title: const Center(
-          child: Column(
-            children: [
-              Text(
-                "PASS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "PENS Attendance Smart System",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ),
+      appBar: const CustomAppBar(role: "dsn"),
 
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +36,6 @@ class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
 
           const SizedBox(height: 12),
 
-          // Dropdown mata kuliah
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: DropdownButtonFormField<String>(

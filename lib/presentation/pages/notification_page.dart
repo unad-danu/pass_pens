@@ -1,106 +1,84 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_appbar.dart';
+import '../widgets/notification_card.dart';
 
 class NotificationPage extends StatelessWidget {
-  const NotificationPage({super.key});
+  final String role; // "dsn" atau "mhs"
+
+  const NotificationPage({super.key, required this.role});
+
+  List<Map<String, dynamic>> getNotifications() {
+    if (role == "dsn") {
+      return [
+        {
+          "title": "Praktikum Bahasa Pemrograman",
+          "subtitle":
+              "Jadwal untuk matakuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+          "time": "5min",
+          "highlight": true,
+        },
+        {
+          "title": "Bahasa Pemrograman",
+          "subtitle":
+              "Jadwal untuk matakuliah Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+          "time": "1d",
+          "highlight": false,
+        },
+        {
+          "title": "Praktikum Bahasa Pemrograman",
+          "subtitle":
+              "Jadwal untuk matakuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+          "time": "1w",
+          "highlight": false,
+        },
+      ];
+    }
+
+    // MAHASISWA
+    return [
+      {
+        "title": "Praktikum Bahasa Pemrograman",
+        "subtitle":
+            "Dosen telah membuka presensi offline untuk matakuliah Praktikum Bahasa Pemrograman",
+        "time": "5min",
+        "highlight": true,
+      },
+      {
+        "title": "Organisasi Mesin & Bahasa Assembly",
+        "subtitle":
+            "Dosen telah membuka presensi online untuk matakuliah Bahasa Pemrograman",
+        "time": "1d",
+        "highlight": false,
+      },
+      {
+        "title": "Sensor & Aktuator",
+        "subtitle":
+            "Dosen telah membuka presensi offline untuk matakuliah Praktikum Bahasa Pemrograman",
+        "time": "1d",
+        "highlight": false,
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final notif = getNotifications();
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: CustomAppBar(role: role, title: "Notifications"),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 80,
-        title: const Center(
-          child: Column(
-            children: [
-              Text(
-                "PASS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "PENS Attendance Smart System",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      body: Column(
-        children: [
-          const SizedBox(height: 12),
-          const Text(
-            "Notifikasi",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildNotifCard(
-                  title: "Pengumuman Presensi",
-                  subtitle: "Presensi kelas Mobile Programming dibuka.",
-                ),
-                const SizedBox(height: 12),
-                _buildNotifCard(
-                  title: "Notifikasi Sistem",
-                  subtitle: "Akun Anda telah diverifikasi.",
-                ),
-                const SizedBox(height: 12),
-                _buildNotifCard(
-                  title: "Pengingat Presensi",
-                  subtitle: "Presensi wajib dilakukan dalam 10 menit.",
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotifCard({required String title, required String subtitle}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black45),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(subtitle, style: const TextStyle(fontSize: 15)),
-        ],
+      body: ListView.builder(
+        itemCount: notif.length,
+        itemBuilder: (context, index) {
+          final n = notif[index];
+          return NotificationCard(
+            title: n["title"],
+            subtitle: n["subtitle"],
+            time: n["time"],
+            highlight: n["highlight"],
+          );
+        },
       ),
     );
   }

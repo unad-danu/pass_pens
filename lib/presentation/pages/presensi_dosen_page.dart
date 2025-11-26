@@ -18,7 +18,12 @@ class _PresensiDosenPageState extends State<PresensiDosenPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: "Presensi Dosen - ${widget.matkul}"),
+      appBar: CustomAppBar(
+        role: "dsn",
+        showBack: true,
+        title: "Presensi Dosen - ${widget.matkul}",
+      ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

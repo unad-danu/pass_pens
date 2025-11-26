@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../pages/detail_matkul_mahasiswa_page.dart'; // <-- tambahkan import ini
+import '../widgets/custom_appbar.dart';
+import '../pages/detail_matkul_mahasiswa_page.dart';
 
 class HomeMahasiswa extends StatefulWidget {
   const HomeMahasiswa({super.key});
@@ -60,30 +61,8 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 80,
-        title: const Center(
-          child: Column(
-            children: [
-              Text(
-                "PASS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "PENS Attendance Smart System",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // 🔥 AppBar dari CustomAppBar
+      appBar: const CustomAppBar(role: "mhs"),
 
       body: Column(
         children: [
@@ -120,9 +99,7 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                     onChanged: (v) => setState(() => search = v),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -155,8 +132,8 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                           namaMatkul: mk.nama,
                           ruangan: mk.tempat,
                           jam: mk.jadwal,
-                          latitude: 0.0, // nanti isi dari supabase
-                          longitude: 0.0, // nanti isi dari supabase
+                          latitude: 0.0,
+                          longitude: 0.0,
                         ),
                       ),
                     );
@@ -169,8 +146,9 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.black45),
+                      border: Border.all(color: Colors.black45), // ✅ BENAR
                     ),
+
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -195,20 +173,11 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                         ),
 
                         const SizedBox(height: 10),
-                        Text(
-                          "Dosen : ${mk.dosen}",
-                          style: const TextStyle(fontSize: 15),
-                        ),
+                        Text("Dosen : ${mk.dosen}"),
                         const SizedBox(height: 4),
-                        Text(
-                          "Tempat : ${mk.tempat}",
-                          style: const TextStyle(fontSize: 15),
-                        ),
+                        Text("Tempat : ${mk.tempat}"),
                         const SizedBox(height: 4),
-                        Text(
-                          "Jadwal : ${mk.jadwal}",
-                          style: const TextStyle(fontSize: 15),
-                        ),
+                        Text("Jadwal : ${mk.jadwal}"),
                       ],
                     ),
                   ),

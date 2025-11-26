@@ -36,30 +36,34 @@ class _MainNavigationState extends State<MainNavigation> {
     //  HALAMAN BERDASARKAN ROLE
     // ============================
     if (widget.role == "mhs" || widget.role == "mahasiswa") {
-      pages = const [
-        HomeMahasiswa(),
-        NotificationPage(),
-        RekapMatkulMahasiswaPage(),
-        ProfilePage(),
+      pages = [
+        const HomeMahasiswa(),
+        NotificationPage(role: "mhs"),
+        const RekapMatkulMahasiswaPage(), // FIX
+        ProfilePage(role: widget.role),
       ];
     } else {
-      pages = const [
-        HomeDosenPage(),
-        NotificationPage(),
-        RekapMatkulDosenPage(),
-        ProfilePage(),
+      pages = [
+        const HomeDosenPage(),
+        NotificationPage(role: "dsn"),
+        const RekapMatkulDosenPage(), // FIX
+        ProfilePage(role: widget.role),
       ];
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color selectedColor = (widget.role == "dsn" || widget.role == "dosen")
+        ? const Color.fromARGB(255, 2, 135, 20)
+        : Colors.blue;
+
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        selectedItemColor: Colors.blue,
+        selectedItemColor: selectedColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [

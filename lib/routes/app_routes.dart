@@ -53,12 +53,11 @@ class AppRoutes {
     homeMahasiswa: (_) => const HomeMahasiswa(),
     homeDosen: (_) => const HomeDosenPage(),
 
-    // MENU MHS
+    // MENU MHS & DOSEN
     profile: (_) => const ProfilePage(),
-    notification: (_) => const NotificationPage(),
+    notification: (_) => const NotificationPage(role: "mhs"),
+    notification: (_) => const NotificationPage(role: "dsn"),
     rekapDosen: (_) => const RekapMatkulDosenPage(),
-
-    // MHS REKAP
     rekapMhs: (_) => const RekapMatkulMahasiswaPage(),
   };
 
@@ -82,11 +81,6 @@ class AppRoutes {
           );
         }
         return _errorRoute("Parameter createDosen tidak valid");
-
-      case rekapMhs:
-        return MaterialPageRoute(
-          builder: (_) => const RekapMatkulMahasiswaPage(),
-        );
     }
 
     return null;

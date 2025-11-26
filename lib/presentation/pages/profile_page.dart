@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../widgets/custom_appbar.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String? role;
+
+  const ProfilePage({super.key, this.role});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -11,14 +14,16 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final supabase = Supabase.instance.client;
 
-  Map<String, dynamic>? userData; // data mahasiswa & dosen
-  List<String> prodiList = []; // khusus dosen
+  Map<String, dynamic>? userData;
+  List<String> prodiList = [];
   bool isLoading = true;
-  String role = ""; // mhs / dsn
+
+  String role = "";
 
   @override
   void initState() {
     super.initState();
+    role = widget.role ?? ""; // FIX ERROR
     _fetchUserData();
   }
 
@@ -26,9 +31,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final authUser = supabase.auth.currentUser;
     if (authUser == null) return;
 
-    // ==============================
-    // 1. Ambil role user dari tabel users
-    // ==============================
     final userRow = await supabase
         .from('users')
         .select('id, role')
@@ -41,11 +43,11 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     final int userId = userRow['id'];
-    role = userRow['role'];
+    role = userRow['role'] ?? "";
 
-    // ==============================
-    // 2. Jika MAHASISWA
-    // ==============================
+    // =============================
+    // DATA MAHASISWA
+    // =============================
     if (role == "mhs") {
       final res = await supabase
           .from('mahasiswa')
@@ -55,15 +57,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         userData = res;
-        prodiList = []; // mahasiswa tidak perlu list prodi
+        prodiList = [];
         isLoading = false;
       });
       return;
     }
 
-    // ==============================
-    // 3. Jika DOSEN → Ambil relasi prodi
-    // ==============================
+    // =============================
+    // DATA DOSEN
+    // =============================
     if (role == "dsn") {
       final res = await supabase
           .from('dosen')
@@ -79,24 +81,23 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           ''')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle(); // FIX: ganti .single() → .maybeSingle()
 
-      final List<String> list = (res['dosen_prodi'] as List)
-          .map((dp) => dp['prodi']['nama'] as String)
-          .toList();
+      final list =
+          (res?['dosen_prodi'] as List?)
+              ?.map((dp) => dp['prodi']['nama'] as String)
+              .toList() ??
+          [];
 
       setState(() {
         userData = res;
         prodiList = list;
         isLoading = false;
       });
-      return;
     }
   }
 
-  // ==============================
-  // Fungsi untuk cari kelas mahasiswa
-  // ==============================
+  // Tentukan kelas dari NRP mahasiswa
   String getKelas(String nrp) {
     if (nrp.length < 3) return "-";
     int last = int.tryParse(nrp.substring(nrp.length - 3)) ?? 0;
@@ -108,6 +109,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return "E";
   }
 
+  // LOGOUT
   void _logout() async {
     await supabase.auth.signOut();
     if (!mounted) return;
@@ -136,27 +138,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 2,
-        title: const Column(
-          children: [
-            Text(
-              "PASS",
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              "PENS Attendance Smart System",
-              style: TextStyle(fontSize: 12, color: Colors.white),
-            ),
-          ],
-        ),
-        toolbarHeight: 70,
-      ),
+
+      appBar: CustomAppBar(role: role, showBack: false),
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -167,7 +150,6 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ================= PROFILE HEADER =================
                   Row(
                     children: [
                       const CircleAvatar(
@@ -204,18 +186,22 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 25),
 
-                  // ================= DATA MAHASISWA =================
+                  // ======================
+                  // DATA MAHASISWA
+                  // ======================
                   if (role == "mhs") ...[
-                    buildItem("Nama Lengkap", data['nama']),
-                    buildItem("NRP", data['nrp']),
-                    buildItem("Kelas", getKelas(data['nrp'])),
-                    buildItem("Prodi", data['prodi']),
-                    buildItem("Angkatan", "${data['angkatan']}"),
-                    buildItem("Nomor Telepon", data['phone']),
-                    buildItem("Recovery Email", data['email_recovery']),
+                    buildItem("Nama Lengkap", data['nama'] ?? "-"),
+                    buildItem("NRP", data['nrp'] ?? "-"),
+                    buildItem("Kelas", getKelas(data['nrp'] ?? "00001")),
+                    buildItem("Prodi", data['prodi'] ?? "-"),
+                    buildItem("Angkatan", "${data['angkatan'] ?? "-"}"),
+                    buildItem("Nomor Telepon", data['phone'] ?? "-"),
+                    buildItem("Recovery Email", data['email_recovery'] ?? "-"),
                   ],
 
-                  // ================= DATA DOSEN =================
+                  // ======================
+                  // DATA DOSEN
+                  // ======================
                   if (role == "dsn") ...[
                     buildItem("NIP", data['nip'] ?? "-"),
                     buildItem("Nama", data['nama'] ?? "-"),
@@ -244,7 +230,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 35),
 
-                  // ================= LOGOUT =================
                   Center(
                     child: ElevatedButton(
                       onPressed: _logout,

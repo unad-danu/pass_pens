@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_appbar.dart'; // pastikan path sesuai
 
 class RekapMatkulMahasiswaPage extends StatefulWidget {
   const RekapMatkulMahasiswaPage({super.key});
@@ -22,33 +23,17 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 0,
-        toolbarHeight: 80,
-        title: const Column(
-          children: [
-            Text(
-              "PASS",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              "PENS Attendance Smart System",
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-        centerTitle: true,
-      ),
+      // ======================
+      //     CUSTOM APPBAR
+      // ======================
+      appBar: const CustomAppBar(role: "mhs"),
 
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
+
+          // Judul
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -88,6 +73,7 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
 
           const SizedBox(height: 16),
 
+          // Daftar pertemuan
           Expanded(
             child: selectedMatkul == null
                 ? const Center(child: Text("Silahkan pilih mata kuliah"))
@@ -142,6 +128,7 @@ class _PertemuanCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header pertemuan
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -162,8 +149,11 @@ class _PertemuanCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 10),
+
           Text("Status: $status", style: const TextStyle(fontSize: 15)),
+
           const SizedBox(height: 4),
+
           Text("Jam: $jam", style: const TextStyle(fontSize: 15)),
         ],
       ),

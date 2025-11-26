@@ -1,39 +1,80 @@
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
   final bool showBack;
+  final String? title;
+  final String? role; // opsional
 
-  const CustomAppBar({super.key, required this.title, this.showBack = true});
+  const CustomAppBar({super.key, this.showBack = false, this.title, this.role});
 
   @override
   Widget build(BuildContext context) {
+    // ============================
+    // NORMALISASI ROLE (lowercase)
+    // ============================
+    final String normalizedRole = (role ?? "").toLowerCase();
+
+    final bool isDosen = normalizedRole == "dsn" || normalizedRole == "dosen";
+
+    // ============================
+    // WARNA APPBAR BERDASARKAN ROLE
+    // ============================
+    final Color appBarColor = isDosen
+        ? const Color.fromARGB(255, 2, 135, 20) // hijau dosen
+        : const Color(0xFF0B5E86); // biru mahasiswa (default)
+
     return AppBar(
+      backgroundColor: appBarColor,
       automaticallyImplyLeading: false,
-      toolbarHeight: 70,
       elevation: 0,
-      backgroundColor: Colors.white,
+      toolbarHeight: 95,
       centerTitle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: Colors.black,
-        ),
-      ),
+
+      // ============================
+      // TOMBOL BACK OPSIONAL
+      // ============================
       leading: showBack
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.black),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             )
           : const SizedBox(),
+
+      title: Column(
+        children: [
+          const Text(
+            "PASS",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const Text(
+            "PENS Attendance Smart System",
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+
+          // ============================
+          // SUBTITLE / TITLE (OPSIONAL)
+          // ============================
+          if (title != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              title!,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(70);
+  Size get preferredSize => const Size.fromHeight(95);
 }

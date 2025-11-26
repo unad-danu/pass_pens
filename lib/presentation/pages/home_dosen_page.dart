@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_appbar.dart';
 import '../pages/detail_matkul_dosen_page.dart';
 
 class HomeDosenPage extends StatefulWidget {
@@ -42,32 +43,15 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B5E86),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 80,
-        title: const Center(
-          child: Column(
-            children: [
-              Text(
-                "PASS",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "PENS Attendance Smart System",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ),
 
-      // ============================== BODY ==============================
+      // ==============================
+      // CUSTOM APPBAR
+      // ==============================
+      appBar: const CustomAppBar(role: "dsn"),
+
+      // ==============================
+      // BODY
+      // ==============================
       body: Column(
         children: [
           const SizedBox(height: 10),
