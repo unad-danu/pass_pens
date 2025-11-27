@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/create_mahasiswa_page.dart';
+import '../../widgets/custom_appbar.dart';
 
 class RegisterMahasiswa extends StatefulWidget {
   const RegisterMahasiswa({super.key});
@@ -193,187 +194,134 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
 
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Column(
+      appBar: const CustomAppBar(role: "mhs"),
+
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: shaker(
+          shakeMain,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 22),
-                width: double.infinity,
-                color: const Color(0xFF0D4C73),
-                child: const Column(
-                  children: [
-                    Text(
-                      "PASS",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "PENS Attendance Smart System",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
+              // Tombol back di body
+              TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back, size: 20),
+                label: const Text(""),
+              ),
+
+              const Center(
+                child: Text(
+                  "Enter Your Biodata",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
 
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 20,
+              const SizedBox(height: 20),
+
+              // Nama
+              shaker(
+                shakeNama,
+                TextField(
+                  controller: namaC,
+                  decoration: deco("Nama Lengkap", errNama, Icons.person),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // NRP
+              shaker(
+                shakeNrp,
+                TextField(
+                  controller: nrpC,
+                  keyboardType: TextInputType.number,
+                  decoration: deco("NRP", errNrp, Icons.badge),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Prodi
+              shaker(
+                shakeProdi,
+                loadingProdi
+                    ? const Center(child: CircularProgressIndicator())
+                    : DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        decoration: deco("Prodi", errProdi, Icons.school),
+                        value: selectedProdi,
+                        items: listProdi.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(p, overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: (v) => setState(() => selectedProdi = v),
+                      ),
+              ),
+              const SizedBox(height: 18),
+
+              // Angkatan
+              shaker(
+                shakeAngkatan,
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  decoration: deco(
+                    "Angkatan",
+                    errAngkatan,
+                    Icons.calendar_month,
                   ),
-                  child: shaker(
-                    shakeMain,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back, size: 20),
-                          label: const Text("", style: TextStyle(fontSize: 15)),
-                        ),
-                        const Center(
-                          child: Text(
-                            "Enter Your Biodata",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                  value: selectedAngkatan,
+                  items: listAngkatan.map((y) {
+                    return DropdownMenuItem(value: y, child: Text(y));
+                  }).toList(),
+                  onChanged: (v) => setState(() => selectedAngkatan = v),
+                ),
+              ),
+              const SizedBox(height: 18),
 
-                        shaker(
-                          shakeNama,
-                          TextField(
-                            controller: namaC,
-                            decoration: deco(
-                              "Nama Lengkap",
-                              errNama,
-                              Icons.person,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
+              // Telepon
+              shaker(
+                shakeTelp,
+                TextField(
+                  controller: telpC,
+                  keyboardType: TextInputType.phone,
+                  decoration: deco("Nomor Telepon", errTelp, Icons.phone),
+                ),
+              ),
+              const SizedBox(height: 18),
 
-                        shaker(
-                          shakeNrp,
-                          TextField(
-                            controller: nrpC,
-                            keyboardType: TextInputType.number,
-                            decoration: deco("NRP", errNrp, Icons.badge),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
+              // Email recovery
+              shaker(
+                shakeRecovery,
+                TextField(
+                  controller: recoveryC,
+                  decoration: deco(
+                    "E-mail Pemulihan",
+                    errRecovery,
+                    Icons.email,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
 
-                        shaker(
-                          shakeProdi,
-                          loadingProdi
-                              ? const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : DropdownButtonFormField<String>(
-                                  isExpanded: true,
-                                  hint: const Text(
-                                    "Pilih Prodi",
-                                  ), // placeholder
-                                  decoration: deco(
-                                    "Prodi",
-                                    errProdi,
-                                    Icons.school,
-                                  ),
-                                  value:
-                                      selectedProdi, // null awal -> placeholder tampil
-                                  items: listProdi.map((p) {
-                                    return DropdownMenuItem(
-                                      value: p,
-                                      child: Text(
-                                        p,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (v) =>
-                                      setState(() => selectedProdi = v),
-                                ),
-                        ),
-                        const SizedBox(height: 18),
+              const SizedBox(height: 30),
 
-                        shaker(
-                          shakeAngkatan,
-                          DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            decoration: deco(
-                              "Angkatan",
-                              errAngkatan,
-                              Icons.calendar_month,
-                            ),
-                            value: selectedAngkatan,
-                            items: listAngkatan.map((y) {
-                              return DropdownMenuItem(value: y, child: Text(y));
-                            }).toList(),
-                            onChanged: (v) =>
-                                setState(() => selectedAngkatan = v),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-
-                        shaker(
-                          shakeTelp,
-                          TextField(
-                            controller: telpC,
-                            keyboardType: TextInputType.phone,
-                            decoration: deco(
-                              "Nomor Telepon",
-                              errTelp,
-                              Icons.phone,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-
-                        shaker(
-                          shakeRecovery,
-                          TextField(
-                            controller: recoveryC,
-                            decoration: deco(
-                              "E-mail Pemulihan",
-                              errRecovery,
-                              Icons.email,
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
-                            ),
-                            onPressed: onSubmit,
-                            child: const Text(
-                              "Continue",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              // Tombol Continue
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                  ),
+                  onPressed: onSubmit,
+                  child: const Text(
+                    "Continue",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
@@ -382,16 +330,16 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
         ),
       ),
 
-      // 🚀 Footer kini ikut naik saat keyboard muncul
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 18),
+        width: double.infinity,
         color: const Color(0xFF0D4C73),
         child: const SafeArea(
           top: false,
           child: Text(
             "Electronic Engineering\nPolytechnic Institute of Surabaya",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white, fontSize: 16),
           ),
         ),
       ),

@@ -66,19 +66,36 @@ class NotificationPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: CustomAppBar(role: role, title: "Notifications"),
+      appBar: CustomAppBar(role: role),
 
-      body: ListView.builder(
-        itemCount: notif.length,
-        itemBuilder: (context, index) {
-          final n = notif[index];
-          return NotificationCard(
-            title: n["title"],
-            subtitle: n["subtitle"],
-            time: n["time"],
-            highlight: n["highlight"],
-          );
-        },
+      body: Column(
+        children: [
+          const SizedBox(height: 10),
+
+          const Center(
+            child: Text(
+              "Notifications",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: notif.length,
+              itemBuilder: (context, index) {
+                final n = notif[index];
+                return NotificationCard(
+                  title: n["title"],
+                  subtitle: n["subtitle"],
+                  time: n["time"],
+                  highlight: n["highlight"],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

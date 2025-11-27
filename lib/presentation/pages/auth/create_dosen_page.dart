@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_page.dart';
 import '../../../core/supabase_config.dart';
+import '../../widgets/custom_appbar.dart';
 
 class CreateDosenPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
@@ -149,36 +150,23 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
+
+      // ==========================
+      //     CUSTOM APP BAR
+      // ==========================
+      appBar: const CustomAppBar(showBack: false, role: "dsn"),
+
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 25),
-            width: double.infinity,
-            color: const Color(0xFF0D4C73),
-            child: const Column(
-              children: [
-                Text(
-                  "PASS",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  "PENS Attendance Smart System",
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ==========================
+                  //   TOMBOL BACK DI BODY
+                  // ==========================
                   Row(
                     children: [
                       IconButton(
@@ -197,7 +185,9 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 25),
+
                   const Text("Email PENS"),
                   TextField(
                     controller: emailC,
@@ -208,7 +198,9 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 15),
+
                   const Text("Password"),
                   TextField(
                     controller: passC,
@@ -220,7 +212,9 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 15),
+
                   const Text("Konfirmasi Password"),
                   TextField(
                     controller: confirmC,
@@ -232,7 +226,9 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 25),
+
                   SizedBox(
                     width: double.infinity,
                     height: 45,
@@ -258,6 +254,7 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
           ),
         ],
       ),
+
       bottomNavigationBar: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -265,7 +262,7 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
         child: const Text(
           "Electronic Engineering\nPolytechnic Institute of Surabaya",
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
     );

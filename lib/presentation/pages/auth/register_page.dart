@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // ➜ Perbaikan: lokasi file sesuai struktur kamu
 import 'package:pass_pens/presentation/pages/auth/register_dosen_page.dart';
 import 'package:pass_pens/presentation/pages/auth/register_mahasiswa_page.dart';
+import 'package:pass_pens/presentation/widgets/custom_appbar.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -17,40 +18,16 @@ class RegisterPage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
+
+      appBar: const CustomAppBar(showBack: false),
       backgroundColor: Colors.white,
+
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: maxWidth),
             child: Column(
               children: [
-                // ================= HEADER =================
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: h * 0.02),
-                  color: const Color(0xFF0D4C73),
-                  child: Column(
-                    children: [
-                      Text(
-                        "PASS",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: w * 0.07 > 34 ? 34 : w * 0.07,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: h * 0.004),
-                      Text(
-                        "PENS Attendance Smart System",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: w * 0.035 > 18 ? 18 : w * 0.035,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 // ================= BACK BUTTON =================
                 Align(
                   alignment: Alignment.centerLeft,
@@ -83,7 +60,6 @@ class RegisterPage extends StatelessWidget {
                       children: [
                         SizedBox(height: h * 0.01),
 
-                        // ICON
                         Container(
                           height: h * 0.20,
                           decoration: BoxDecoration(
@@ -111,7 +87,6 @@ class RegisterPage extends StatelessWidget {
 
                         const SizedBox(height: 18),
 
-                        // ================= CARD PILIHAN =================
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -120,7 +95,6 @@ class RegisterPage extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              // ========== PILIH DOSEN ==========
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -157,7 +131,6 @@ class RegisterPage extends StatelessWidget {
 
                               const SizedBox(height: 14),
 
-                              // ========== PILIH MAHASISWA ==========
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -200,33 +173,23 @@ class RegisterPage extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // ================= FOOTER =================
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: h * 0.02),
-                  color: const Color(0xFF0D4C73),
-                  child: Column(
-                    children: [
-                      Text(
-                        "Electronic Engineering",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: w * 0.04 > 18 ? 18 : w * 0.04,
-                        ),
-                      ),
-                      Text(
-                        "Polytechnic Institute of Surabaya",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: w * 0.04 > 18 ? 18 : w * 0.04,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
+          ),
+        ),
+      ),
+
+      // ====== DIPINDAH KE SINI (UI TIDAK BERUBAH) ======
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        width: double.infinity,
+        color: const Color(0xFF0D4C73),
+        child: const SafeArea(
+          top: false,
+          child: Text(
+            "Electronic Engineering\nPolytechnic Institute of Surabaya",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 16),
           ),
         ),
       ),

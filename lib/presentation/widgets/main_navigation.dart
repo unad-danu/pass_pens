@@ -55,8 +55,8 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final Color selectedColor = (widget.role == "dsn" || widget.role == "dosen")
-        ? const Color.fromARGB(255, 2, 135, 20)
-        : Colors.blue;
+        ? const Color(0xFF000000)
+        : const Color(0xFF0B5E86);
 
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),

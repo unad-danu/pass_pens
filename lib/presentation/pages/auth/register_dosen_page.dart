@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/create_dosen_page.dart';
+import '../../widgets/custom_appbar.dart';
 
 class RegisterDosenPage extends StatefulWidget {
   const RegisterDosenPage({super.key});
@@ -200,326 +201,336 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth = constraints.maxWidth > 500
-                  ? 500.0
-                  : constraints.maxWidth;
+      resizeToAvoidBottomInset: false,
 
-              return Center(
-                child: SizedBox(
-                  width: maxWidth,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        width: double.infinity,
-                        color: const Color(0xFF0D4C73),
-                        child: const Column(
+      // ============================
+      //    CUSTOM APPBAR DIATAS
+      // ============================
+      body: Column(
+        children: [
+          const CustomAppBar(
+            role: "dsn",
+            showBack: false, // back button manual di body
+          ),
+
+          // ============================
+          //            BODY
+          // ============================
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth > 500
+                        ? 500.0
+                        : constraints.maxWidth;
+
+                    return Center(
+                      child: SizedBox(
+                        width: maxWidth,
+                        child: Column(
                           children: [
-                            Text(
-                              "PASS",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: EdgeInsets.only(
+                                  left: 24,
+                                  right: 24,
+                                  bottom:
+                                      MediaQuery.of(context).viewInsets.bottom +
+                                      20,
+                                ),
+                                child: AnimatedBuilder(
+                                  animation: _shakeFormController,
+                                  builder: (context, child) {
+                                    final offset =
+                                        sin(_shakeFormController.value * 6.28) *
+                                        6;
+                                    return Transform.translate(
+                                      offset: Offset(offset, 0),
+                                      child: child,
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      TextButton.icon(
+                                        onPressed: () => Navigator.pop(context),
+                                        icon: const Icon(Icons.arrow_back),
+                                        label: const Text(""),
+                                      ),
+
+                                      const Center(
+                                        child: Text(
+                                          "Enter Your Biodata",
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 22),
+
+                                      // NAMA
+                                      AnimatedBuilder(
+                                        animation: _shakeNamaController,
+                                        builder: (context, child) {
+                                          final offset =
+                                              sin(
+                                                _shakeNamaController.value *
+                                                    6.28,
+                                              ) *
+                                              4;
+                                          return Transform.translate(
+                                            offset: Offset(offset, 0),
+                                            child: child,
+                                          );
+                                        },
+                                        child: TextField(
+                                          controller: _namaCtrl,
+                                          decoration:
+                                              fieldDeco(
+                                                "Nama Lengkap",
+                                                errNama,
+                                              ).copyWith(
+                                                prefixIcon: const Icon(
+                                                  Icons.person,
+                                                ),
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // NIP
+                                      AnimatedBuilder(
+                                        animation: _shakeNipController,
+                                        builder: (context, child) {
+                                          final offset =
+                                              sin(
+                                                _shakeNipController.value *
+                                                    6.28,
+                                              ) *
+                                              4;
+                                          return Transform.translate(
+                                            offset: Offset(offset, 0),
+                                            child: child,
+                                          );
+                                        },
+                                        child: TextField(
+                                          controller: _nipCtrl,
+                                          keyboardType: TextInputType.number,
+                                          decoration: fieldDeco("NIP", errNip)
+                                              .copyWith(
+                                                prefixIcon: const Icon(
+                                                  Icons.badge,
+                                                ),
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // PRODI
+                                      AnimatedBuilder(
+                                        animation: _shakeProdiController,
+                                        builder: (context, child) {
+                                          final offset =
+                                              sin(
+                                                _shakeProdiController.value *
+                                                    6.28,
+                                              ) *
+                                              4;
+                                          return Transform.translate(
+                                            offset: Offset(offset, 0),
+                                            child: child,
+                                          );
+                                        },
+                                        child: _loadingProdi
+                                            ? const Center(
+                                                child:
+                                                    CircularProgressIndicator(),
+                                              )
+                                            : _loadError != null
+                                            ? Text(
+                                                _loadError!,
+                                                style: const TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              )
+                                            : GestureDetector(
+                                                onTap: () async {
+                                                  final results =
+                                                      await showDialog<
+                                                        List<String>
+                                                      >(
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return MultiSelectDialog(
+                                                            items: listProdi
+                                                                .map(
+                                                                  (p) =>
+                                                                      MultiSelectItem(
+                                                                        p,
+                                                                        p,
+                                                                      ),
+                                                                )
+                                                                .toList(),
+                                                            initialValue:
+                                                                selectedProdi,
+                                                            confirmText:
+                                                                const Text(
+                                                                  "OK",
+                                                                ),
+                                                            cancelText:
+                                                                const Text(
+                                                                  "Batal",
+                                                                ),
+                                                          );
+                                                        },
+                                                      );
+
+                                                  if (results != null) {
+                                                    setState(() {
+                                                      selectedProdi = results;
+                                                    });
+                                                  }
+                                                },
+                                                child: InputDecorator(
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        "Prodi yang Diajar",
+                                                    errorText: errProdi,
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    prefixIcon: const Icon(
+                                                      Icons.school_outlined,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    selectedProdi.isEmpty
+                                                        ? ""
+                                                        : selectedProdi.join(
+                                                            ", ",
+                                                          ),
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // PHONE
+                                      AnimatedBuilder(
+                                        animation: _shakePhoneController,
+                                        builder: (context, child) {
+                                          final offset =
+                                              sin(
+                                                _shakePhoneController.value *
+                                                    6.28,
+                                              ) *
+                                              4;
+                                          return Transform.translate(
+                                            offset: Offset(offset, 0),
+                                            child: child,
+                                          );
+                                        },
+                                        child: TextField(
+                                          controller: _phoneCtrl,
+                                          keyboardType: TextInputType.phone,
+                                          decoration:
+                                              fieldDeco(
+                                                "Phone Number",
+                                                errPhone,
+                                              ).copyWith(
+                                                prefixIcon: const Icon(
+                                                  Icons.phone,
+                                                ),
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // EMAIL
+                                      AnimatedBuilder(
+                                        animation: _shakeEmailController,
+                                        builder: (context, child) {
+                                          final offset =
+                                              sin(
+                                                _shakeEmailController.value *
+                                                    6.28,
+                                              ) *
+                                              4;
+                                          return Transform.translate(
+                                            offset: Offset(offset, 0),
+                                            child: child,
+                                          );
+                                        },
+                                        child: TextField(
+                                          controller: _emailCtrl,
+                                          decoration:
+                                              fieldDeco(
+                                                "Recovery Email",
+                                                errEmail,
+                                              ).copyWith(
+                                                prefixIcon: const Icon(
+                                                  Icons.email,
+                                                ),
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 30),
+
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 48,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                          ),
+                                          onPressed: _onSubmit,
+                                          child: const Text(
+                                            "Continue",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              "PENS Attendance Smart System",
-                              style: TextStyle(color: Colors.white),
+
+                            // FOOTER
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              width: double.infinity,
+                              color: const Color(0xFF0D4C73),
+                              child: const Text(
+                                "Electronic Engineering\nPolytechnic Institute of Surabaya",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            left: 24,
-                            right: 24,
-                            bottom:
-                                MediaQuery.of(context).viewInsets.bottom + 20,
-                          ),
-                          child: AnimatedBuilder(
-                            animation: _shakeFormController,
-                            builder: (context, child) {
-                              final offset =
-                                  sin(_shakeFormController.value * 6.28) * 6;
-                              return Transform.translate(
-                                offset: Offset(offset, 0),
-                                child: child,
-                              );
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextButton.icon(
-                                  onPressed: () => Navigator.pop(context),
-                                  icon: const Icon(Icons.arrow_back, size: 20),
-                                  label: const Text(
-                                    "",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                const Center(
-                                  child: Text(
-                                    "Enter Your Biodata",
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-
-                                // ================= NAMA =================
-                                AnimatedBuilder(
-                                  animation: _shakeNamaController,
-                                  builder: (context, child) {
-                                    final offset =
-                                        sin(_shakeNamaController.value * 6.28) *
-                                        4;
-                                    return Transform.translate(
-                                      offset: Offset(offset, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: TextField(
-                                    controller: _namaCtrl,
-                                    decoration:
-                                        fieldDeco(
-                                          "Nama Lengkap",
-                                          errNama,
-                                        ).copyWith(
-                                          prefixIcon: const Icon(Icons.person),
-                                        ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // ================= NIP =================
-                                AnimatedBuilder(
-                                  animation: _shakeNipController,
-                                  builder: (context, child) {
-                                    final offset =
-                                        sin(_shakeNipController.value * 6.28) *
-                                        4;
-                                    return Transform.translate(
-                                      offset: Offset(offset, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: TextField(
-                                    controller: _nipCtrl,
-                                    keyboardType: TextInputType.number,
-                                    decoration: fieldDeco("NIP", errNip)
-                                        .copyWith(
-                                          prefixIcon: const Icon(Icons.badge),
-                                        ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // ============ PRODI DARI SUPABASE ============
-                                AnimatedBuilder(
-                                  animation: _shakeProdiController,
-                                  builder: (context, child) {
-                                    final offset =
-                                        sin(
-                                          _shakeProdiController.value * 6.28,
-                                        ) *
-                                        4;
-                                    return Transform.translate(
-                                      offset: Offset(offset, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: _loadingProdi
-                                      ? const Padding(
-                                          padding: EdgeInsets.all(12),
-                                          child: Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        )
-                                      : _loadError != null
-                                      ? Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Text(
-                                            _loadError!,
-                                            style: const TextStyle(
-                                              color: Colors.red,
-                                            ),
-                                          ),
-                                        )
-                                      : GestureDetector(
-                                          onTap: () async {
-                                            final results =
-                                                await showDialog<List<String>>(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return MultiSelectDialog(
-                                                      items: listProdi
-                                                          .map(
-                                                            (p) =>
-                                                                MultiSelectItem(
-                                                                  p,
-                                                                  p,
-                                                                ),
-                                                          )
-                                                          .toList(),
-                                                      initialValue:
-                                                          selectedProdi,
-                                                      confirmText: const Text(
-                                                        "OK",
-                                                      ),
-                                                      cancelText: const Text(
-                                                        "Batal",
-                                                      ),
-                                                    );
-                                                  },
-                                                );
-
-                                            if (results != null) {
-                                              setState(
-                                                () => selectedProdi = results,
-                                              );
-                                            }
-                                          },
-                                          child: InputDecorator(
-                                            decoration: InputDecoration(
-                                              labelText: "Prodi yang Diajar",
-                                              errorText: errProdi,
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              prefixIcon: const Icon(
-                                                Icons.school_outlined,
-                                              ),
-                                              floatingLabelBehavior:
-                                                  selectedProdi.isEmpty
-                                                  ? FloatingLabelBehavior.auto
-                                                  : FloatingLabelBehavior
-                                                        .always,
-                                            ),
-                                            isEmpty: selectedProdi.isEmpty,
-                                            child: Text(
-                                              selectedProdi.isEmpty
-                                                  ? ""
-                                                  : selectedProdi.join(", "),
-                                              style: TextStyle(
-                                                color: selectedProdi.isEmpty
-                                                    ? Colors.transparent
-                                                    : Colors.black,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // ================= PHONE =================
-                                AnimatedBuilder(
-                                  animation: _shakePhoneController,
-                                  builder: (context, child) {
-                                    final offset =
-                                        sin(
-                                          _shakePhoneController.value * 6.28,
-                                        ) *
-                                        4;
-                                    return Transform.translate(
-                                      offset: Offset(offset, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: TextField(
-                                    controller: _phoneCtrl,
-                                    keyboardType: TextInputType.phone,
-                                    decoration:
-                                        fieldDeco(
-                                          "Phone Number",
-                                          errPhone,
-                                        ).copyWith(
-                                          prefixIcon: const Icon(Icons.phone),
-                                        ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // ================= EMAIL =================
-                                AnimatedBuilder(
-                                  animation: _shakeEmailController,
-                                  builder: (context, child) {
-                                    final offset =
-                                        sin(
-                                          _shakeEmailController.value * 6.28,
-                                        ) *
-                                        4;
-                                    return Transform.translate(
-                                      offset: Offset(offset, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: TextField(
-                                    controller: _emailCtrl,
-                                    decoration:
-                                        fieldDeco(
-                                          "Recovery Email",
-                                          errEmail,
-                                        ).copyWith(
-                                          prefixIcon: const Icon(Icons.email),
-                                        ),
-                                  ),
-                                ),
-                                const SizedBox(height: 30),
-
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                    ),
-                                    onPressed: _onSubmit,
-                                    child: const Text(
-                                      "Continue",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        width: double.infinity,
-                        color: const Color(0xFF0D4C73),
-                        child: const Text(
-                          "Electronic Engineering\nPolytechnic Institute of Surabaya",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

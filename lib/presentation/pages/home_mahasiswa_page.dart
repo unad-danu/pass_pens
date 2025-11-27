@@ -130,8 +130,11 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                       MaterialPageRoute(
                         builder: (_) => DetailMatkulMahasiswaPage(
                           namaMatkul: mk.nama,
+                          dosen: mk.dosen,
                           ruangan: mk.tempat,
-                          jam: mk.jadwal,
+                          jadwal: mk.jadwal,
+                          attendanceTerakhir: "Belum ada", // sementara dummy
+                          isOffline: true, // contoh: offline = merah
                           latitude: 0.0,
                           longitude: 0.0,
                         ),

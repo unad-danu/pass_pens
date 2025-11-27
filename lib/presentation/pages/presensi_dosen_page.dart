@@ -18,16 +18,38 @@ class _PresensiDosenPageState extends State<PresensiDosenPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        role: "dsn",
-        showBack: true,
-        title: "Presensi Dosen - ${widget.matkul}",
-      ),
+      appBar: const CustomAppBar(role: "dsn", showBack: false),
 
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// ============================
+            /// TOMBOL BACK DI BODY
+            /// ============================
+            Row(
+              children: [
+                InkWell(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Presensi Dosen - ${widget.matkul}",
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
             SwitchListTile(
               title: const Text("Presensi Aktif"),
               value: presensiAktif,

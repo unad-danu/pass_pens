@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/register_page.dart';
 import '../../widgets/main_navigation.dart';
+import '../../widgets/custom_appbar.dart';
 
 // Pakai prefix agar tidak tabrakan
 import '../home_mahasiswa_page.dart' as mhs;
@@ -136,36 +137,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
+      appBar: const CustomAppBar(),
+
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              color: const Color(0xFF0B5E86),
-              child: Column(
-                children: const [
-                  Text(
-                    "PASS",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "PENS Attendance Smart System",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-
-            // BODY
+            // ============================ BODY ============================
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -176,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
 
                     // Icon circle
                     Container(
@@ -192,6 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.black54,
                       ),
                     ),
+
                     const SizedBox(height: 18),
 
                     const Text(
@@ -202,6 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+
                     const SizedBox(height: 24),
 
                     // Email
@@ -217,6 +198,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
+
                     const SizedBox(height: 16),
 
                     // Password
@@ -297,15 +279,15 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // FOOTER
+            // ============================ FOOTER ============================
             Container(
-              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
+              width: double.infinity,
               color: const Color(0xFF0B5E86),
               child: const Text(
                 "Electronic Engineering\nPolytechnic Institute of Surabaya",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
           ],

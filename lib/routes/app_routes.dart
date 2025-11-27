@@ -16,7 +16,7 @@ import '../presentation/pages/home_dosen_page.dart';
 import '../presentation/pages/profile_page.dart';
 import '../presentation/pages/notification_page.dart';
 
-// WAJIB
+// REKAP
 import '../presentation/pages/rekap_matkul_mahasiswa_page.dart';
 import '../presentation/pages/rekap_matkul_dosen_page.dart';
 
@@ -37,9 +37,9 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String notification = '/notification';
   static const String rekapDosen = '/rekap-dosen';
-  static const String rekapMhs = '/rekap_mhs';
+  static const String rekapMhs = '/rekap-mhs';
 
-  // ===== DEFAULT ROUTES =====
+  // ===== STATIC ROUTES =====
   static Map<String, WidgetBuilder> routes = {
     // AUTH
     login: (_) => const LoginPage(),
@@ -53,10 +53,8 @@ class AppRoutes {
     homeMahasiswa: (_) => const HomeMahasiswa(),
     homeDosen: (_) => const HomeDosenPage(),
 
-    // MENU MHS & DOSEN
+    // MENU (role tidak ditulis di sini, diambil dari arguments)
     profile: (_) => const ProfilePage(),
-    notification: (_) => const NotificationPage(role: "mhs"),
-    notification: (_) => const NotificationPage(role: "dsn"),
     rekapDosen: (_) => const RekapMatkulDosenPage(),
     rekapMhs: (_) => const RekapMatkulMahasiswaPage(),
   };
@@ -66,6 +64,14 @@ class AppRoutes {
     final args = settings.arguments;
 
     switch (settings.name) {
+      case notification:
+        if (args is String) {
+          return MaterialPageRoute(
+            builder: (_) => NotificationPage(role: args),
+          );
+        }
+        return _errorRoute("Notification membutuhkan 'role' (mhs/dsn)");
+
       case createMahasiswa:
         if (args is Map<String, dynamic>) {
           return MaterialPageRoute(

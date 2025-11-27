@@ -199,31 +199,44 @@ class _ProfilePageState extends State<ProfilePage> {
                     buildItem("Recovery Email", data['email_recovery'] ?? "-"),
                   ],
 
-                  // ======================
-                  // DATA DOSEN
-                  // ======================
                   if (role == "dsn") ...[
                     buildItem("NIP", data['nip'] ?? "-"),
                     buildItem("Nama", data['nama'] ?? "-"),
+
+                    // ===========================
+                    //     PRODI LIST DOSEN
+                    // ===========================
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Prodi yang Diajar",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        if (prodiList.isNotEmpty) ...[
+                          ...prodiList.map(
+                            (p) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                "- $p",
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ),
+                        ] else
+                          const Text("-", style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
+                    Divider(height: 1, color: Colors.grey.shade400),
+                    const SizedBox(height: 12),
+
                     buildItem("Nomor Telepon", data['phone'] ?? "-"),
                     buildItem("Recovery Email", data['email_recovery'] ?? "-"),
-
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Prodi yang Diajar:",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    Wrap(
-                      spacing: 8,
-                      children: prodiList
-                          .map((p) => Chip(label: Text(p)))
-                          .toList(),
-                    ),
 
                     const SizedBox(height: 20),
                   ],
@@ -234,7 +247,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ElevatedButton(
                       onPressed: _logout,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black87,
+                        backgroundColor: Colors.red[700],
                         padding: const EdgeInsets.symmetric(
                           horizontal: 50,
                           vertical: 14,

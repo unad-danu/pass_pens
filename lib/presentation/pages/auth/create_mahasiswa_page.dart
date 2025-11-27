@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase_config.dart';
 import 'login_page.dart';
+import '../../widgets/custom_appbar.dart';
 
 class CreateMahasiswaPage extends StatefulWidget {
   final Map<String, dynamic> biodata;
@@ -163,38 +164,24 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: false,
+
+      // ==========================
+      //     CUSTOM APP BAR
+      // ==========================
+      appBar: const CustomAppBar(role: "mhs"),
+
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            width: double.infinity,
-            color: const Color(0xFF1B4F7D),
-            child: const Column(
-              children: [
-                Text(
-                  "PASS",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  "PENS Attendance Smart System",
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ==========================
+                  //      TOMBOL BACK DI BODY
+                  // ==========================
                   Row(
                     children: [
                       IconButton(
@@ -252,6 +239,7 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 20),
 
                   SizedBox(
@@ -279,12 +267,13 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
       ),
 
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        width: double.infinity,
         color: const Color(0xFF1B4F7D),
         child: const Text(
           "Electronic Engineering\nPolytechnic Institute of Surabaya",
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
     );
