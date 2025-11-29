@@ -45,6 +45,15 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
     return email.endsWith("@$domain.student.pens.ac.id");
   }
 
+  // === VALIDATOR PASSWORD ===
+  bool isValidPassword(String pass) {
+    final hasUppercase = pass.contains(RegExp(r'[A-Z]'));
+    final hasNumber = pass.contains(RegExp(r'[0-9]'));
+    final hasMinLength = pass.length >= 8;
+
+    return hasUppercase && hasNumber && hasMinLength;
+  }
+
   Future<void> createAccount() async {
     final email = emailController.text.trim();
     final pass = passController.text.trim();
@@ -72,6 +81,19 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
     if (pass != confirm) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password dan konfirmasi tidak sama")),
+      );
+      return;
+    }
+
+    // CEK ATURAN PASSWORD
+    if (!isValidPassword(pass)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Password harus minimal 8 karakter,\n"
+            "mengandung 1 huruf besar dan 1 angka.",
+          ),
+        ),
       );
       return;
     }
@@ -159,6 +181,14 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
   }
 
   @override
+  void dispose() {
+    emailController.dispose();
+    passController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final domain = prodiToDomain[widget.biodata['prodi']] ?? "";
 
@@ -223,7 +253,7 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                     obscureText: true,
                     decoration: InputDecoration(
                       labelText: "Enter Your Password",
-                      hintText: "minimum 8 characters",
+                      hintText: "minimum 8 karakter, 1 huruf besar, 1 angka",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

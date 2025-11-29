@@ -124,6 +124,9 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
     return InputDecoration(
       labelText: label,
       errorText: err,
+      // Biar errorText bisa wrap / turun ke baris bawah
+      errorMaxLines: 3,
+      errorStyle: const TextStyle(fontSize: 13, height: 1.2, color: Colors.red),
       prefixIcon: Icon(icon),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -134,16 +137,33 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
     );
   }
 
+  // --- Validator Gmail ---
+  bool isValidGmail(String email) {
+    // regex memastikan format lokal-part yang valid + @gmail.com
+    final regex = RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$');
+    return regex.hasMatch(email);
+  }
+
   void onSubmit() {
+    // ambil dan trim terlebih dahulu (jangan langsung lowercasing saat validasi, tapi simpan lower saat pass ke biodata)
+    final recoveryRaw = recoveryC.text.trim();
+
     setState(() {
       errNama = namaC.text.isEmpty ? "Nama wajib diisi" : null;
       errNrp = nrpC.text.isEmpty ? "NRP wajib diisi" : null;
       errProdi = selectedProdi == null ? "Prodi wajib dipilih" : null;
       errAngkatan = selectedAngkatan == null ? "Angkatan wajib dipilih" : null;
       errTelp = telpC.text.isEmpty ? "Nomor telepon wajib diisi" : null;
-      errRecovery = recoveryC.text.isEmpty
-          ? "Email pemulihan wajib diisi"
-          : null;
+
+      if (recoveryRaw.isEmpty) {
+        errRecovery = "Email pemulihan wajib diisi";
+      } else if (!isValidGmail(recoveryRaw)) {
+        // teks error yang lebih ramah untuk wrapping
+        errRecovery =
+            "Gunakan E-mail Gmail yang valid (contoh: users@gmail.com)";
+      } else {
+        errRecovery = null;
+      }
     });
 
     if ([
@@ -170,7 +190,8 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
       "prodi": selectedProdi,
       "angkatan": selectedAngkatan,
       "phone": telpC.text.trim(),
-      "email_recovery": recoveryC.text.trim(),
+      // simpan email recovery dalam lowercase agar konsisten
+      "email_recovery": recoveryRaw.toLowerCase(),
     };
 
     Navigator.push(

@@ -104,9 +104,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
   // ================= VALIDASI ==================
 
-  final _emailRegex = RegExp(
-    r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-  );
+  // regex generik untuk Gmail: local-part + @gmail.com
+  final _gmailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$');
 
   String? validateNama(String v) {
     if (v.trim().isEmpty) return "Nama wajib diisi";
@@ -135,19 +134,24 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
   }
 
   String? validateEmail(String v) {
-    if (v.trim().isEmpty) return "E-mail wajib diisi";
-    if (!_emailRegex.hasMatch(v.trim())) return "Format e-mail tidak valid";
+    final trimmed = v.trim();
+    if (trimmed.isEmpty) return "E-mail wajib diisi";
+    if (!_gmailRegex.hasMatch(trimmed))
+      return "Gunakan E-mail Gmail yang valid (contoh: users@gmail.com)";
     return null;
   }
 
   void _triggerShake(AnimationController c) => c.forward(from: 0);
 
   void _onSubmit() {
+    // ambil dan trim email terlebih dahulu
+    final emailRaw = _emailCtrl.text.trim();
+
     final n = validateNama(_namaCtrl.text);
     final nip = validateNip(_nipCtrl.text);
     final p = validateProdi(selectedProdi);
     final ph = validatePhone(_phoneCtrl.text);
-    final e = validateEmail(_emailCtrl.text);
+    final e = validateEmail(emailRaw);
 
     setState(() {
       errNama = n;
@@ -175,7 +179,8 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
             "nama": _namaCtrl.text.trim(),
             "nip": _nipCtrl.text.trim(),
             "phone": _phoneCtrl.text.trim(),
-            "email_recovery": _emailCtrl.text.trim(),
+            // simpan recovery email dalam lowercase agar konsisten
+            "email_recovery": emailRaw.toLowerCase(),
             "prodi": selectedProdi,
           },
         ),
@@ -187,6 +192,9 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     return InputDecoration(
       labelText: label,
       errorText: err,
+      // agar errorText bisa wrap / turun ke baris bawah
+      errorMaxLines: 3,
+      errorStyle: const TextStyle(fontSize: 13, height: 1.2, color: Colors.red),
       floatingLabelStyle: const TextStyle(
         color: Colors.blue,
         fontWeight: FontWeight.bold,
@@ -376,6 +384,12 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                             decoration: InputDecoration(
                                               labelText: "Prodi yang Diajar",
                                               errorText: errProdi,
+                                              errorMaxLines: 3,
+                                              errorStyle: const TextStyle(
+                                                fontSize: 13,
+                                                height: 1.2,
+                                                color: Colors.red,
+                                              ),
                                               border: OutlineInputBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(10),
@@ -440,6 +454,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                   },
                                   child: TextField(
                                     controller: _emailCtrl,
+                                    keyboardType: TextInputType.emailAddress,
                                     decoration:
                                         fieldDeco(
                                           "Recovery Email",
