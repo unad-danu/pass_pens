@@ -54,7 +54,7 @@ class AppRoutes {
     // MENU
     profile: (_) => const ProfilePage(),
     rekapDosen: (_) => const RekapMatkulDosenPage(),
-    rekapMhs: (_) => const RekapMatkulMahasiswaPage(),
+    rekapMhs: (_) => RekapMatkulMahasiswaPage(),
   };
 
   // ===== DYNAMIC ROUTES =====

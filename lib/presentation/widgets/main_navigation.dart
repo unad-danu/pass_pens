@@ -39,7 +39,7 @@ class _MainNavigationState extends State<MainNavigation> {
       pages = [
         const HomeMahasiswa(),
         NotificationPage(role: "mhs"),
-        const RekapMatkulMahasiswaPage(), // FIX
+        RekapMatkulMahasiswaPage(), // FIX
         ProfilePage(role: widget.role),
       ];
     } else {
