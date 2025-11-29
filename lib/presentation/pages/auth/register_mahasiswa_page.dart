@@ -210,7 +210,10 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
               // Tombol back di body
               TextButton.icon(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black, // ← warna hitam
+                ),
                 label: const Text(""),
               ),
 

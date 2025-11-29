@@ -154,7 +154,7 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
       // ==========================
       //     CUSTOM APP BAR
       // ==========================
-      appBar: const CustomAppBar(showBack: false, role: "dsn"),
+      appBar: const CustomAppBar(role: "guest", showBack: false),
 
       body: Column(
         children: [
@@ -171,7 +171,10 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black, // ← ikon hitam
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Expanded(

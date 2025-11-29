@@ -46,14 +46,12 @@ class AppRoutes {
     register: (_) => const RegisterPage(),
     registerMahasiswa: (_) => const RegisterMahasiswa(),
     registerDosen: (_) => const RegisterDosenPage(),
-    createMahasiswa: (_) => const SizedBox(),
-    createDosen: (_) => const SizedBox(),
 
     // HOME
     homeMahasiswa: (_) => const HomeMahasiswa(),
     homeDosen: (_) => const HomeDosenPage(),
 
-    // MENU (role tidak ditulis di sini, diambil dari arguments)
+    // MENU
     profile: (_) => const ProfilePage(),
     rekapDosen: (_) => const RekapMatkulDosenPage(),
     rekapMhs: (_) => const RekapMatkulMahasiswaPage(),

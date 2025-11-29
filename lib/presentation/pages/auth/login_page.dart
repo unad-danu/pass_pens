@@ -157,18 +157,14 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 20),
 
-                    // Icon circle
                     Container(
                       height: 150,
                       width: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 80,
-                        color: Colors.black54,
+                      decoration: const BoxDecoration(shape: BoxShape.circle),
+                      clipBehavior: Clip.hardEdge,
+                      child: Image.asset(
+                        'assets/icon_login.png',
+                        fit: BoxFit.cover,
                       ),
                     ),
 

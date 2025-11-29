@@ -33,19 +33,12 @@ class RegisterPage extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Padding(
                     padding: const EdgeInsets.only(left: 15, top: 10),
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        foregroundColor: Colors.black,
-                      ),
+                    child: IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, size: 20),
-                      label: const Text(
-                        "",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 20,
+                        color: Colors.black, // ← warna hitam
                       ),
                     ),
                   ),
@@ -61,17 +54,15 @@ class RegisterPage extends StatelessWidget {
                         SizedBox(height: h * 0.01),
 
                         Container(
-                          height: h * 0.20,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
+                          height: 150,
+                          width: 150,
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                           ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.person_add_alt_1,
-                              size: 80,
-                              color: Colors.black54,
-                            ),
+                          clipBehavior: Clip.hardEdge,
+                          child: Image.asset(
+                            'assets/icon_login.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
 

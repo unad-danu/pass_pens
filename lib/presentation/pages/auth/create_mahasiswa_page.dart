@@ -186,7 +186,10 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black, // ← ikon hitam
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Expanded(
