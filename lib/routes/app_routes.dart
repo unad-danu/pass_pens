@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// AUTH
+// ---------------------- AUTH ----------------------
 import '../presentation/pages/auth/login_page.dart';
 import '../presentation/pages/auth/register_page.dart';
 import '../presentation/pages/auth/register_mahasiswa_page.dart';
@@ -8,20 +8,31 @@ import '../presentation/pages/auth/register_dosen_page.dart';
 import '../presentation/pages/auth/create_dosen_page.dart';
 import '../presentation/pages/auth/create_mahasiswa_page.dart';
 
-// HOME
+// ---------------------- HOME ----------------------
 import '../presentation/pages/home_mahasiswa_page.dart';
 import '../presentation/pages/home_dosen_page.dart';
 
-// MENU
+// ---------------------- MENU ----------------------
 import '../presentation/pages/profile_page.dart';
 import '../presentation/pages/notification_page.dart';
 
-// REKAP
+// ---------------------- REKAP ----------------------
 import '../presentation/pages/rekap_matkul_mahasiswa_page.dart';
 import '../presentation/pages/rekap_matkul_dosen_page.dart';
 
+// ---------------------- ADMIN ----------------------
+import '../presentation/pages/admin/admin_dashboard_page.dart';
+import '../presentation/pages/admin/admin_kelola_matkul_page.dart';
+import '../presentation/pages/admin/admin_kelola_dosen_page.dart';
+import '../presentation/pages/admin/admin_kelola_jadwal_page.dart';
+import '../presentation/pages/admin/admin_kelola_kelas_page.dart';
+import '../presentation/pages/admin/admin_kelola_ruangan_page.dart';
+import '../presentation/pages/admin/admin_assign_matkul_page.dart';
+
 class AppRoutes {
-  // ===== AUTH =====
+  // =====================================================
+  //                      AUTH
+  // =====================================================
   static const String login = '/login';
   static const String register = '/register';
   static const String registerMahasiswa = '/register-mahasiswa';
@@ -29,17 +40,36 @@ class AppRoutes {
   static const String createMahasiswa = '/create-mahasiswa';
   static const String createDosen = '/create-dosen';
 
-  // ===== HOME =====
+  // =====================================================
+  //                      HOME
+  // =====================================================
   static const String homeMahasiswa = '/home-mahasiswa';
   static const String homeDosen = '/home-dosen';
 
-  // ===== MENU =====
+  // =====================================================
+  //                      MENU
+  // =====================================================
   static const String profile = '/profile';
   static const String notification = '/notification';
   static const String rekapDosen = '/rekap-dosen';
-  static const String rekapMhs = '/rekap-mhs';
+  static const String rekapMahasiswa = '/rekap-mahasiswa';
 
-  // ===== STATIC ROUTES =====
+  // =====================================================
+  //                      ADMIN
+  // =====================================================
+  static const String adminDashboard = '/admin/dashboard';
+  static const String adminKelolaMatkul = '/admin/kelola-matkul';
+  static const String adminKelolaDosen = '/admin/kelola-dosen';
+  static const String adminKelolaJadwal = '/admin/kelola-jadwal';
+  static const String adminKelolaKelas = '/admin/kelola-kelas';
+  static const String adminKelolaRuang = '/admin/kelola-ruang';
+
+  // Assign Matkul
+  static const String adminAssignMatkul = '/admin/assign-matkul';
+
+  // =====================================================
+  //                   STATIC ROUTES
+  // =====================================================
   static Map<String, WidgetBuilder> routes = {
     // AUTH
     login: (_) => const LoginPage(),
@@ -52,53 +82,75 @@ class AppRoutes {
     homeDosen: (_) => const HomeDosenPage(),
 
     // MENU
-    profile: (_) => const ProfilePage(),
     rekapDosen: (_) => const RekapMatkulDosenPage(),
-    rekapMhs: (_) => RekapMatkulMahasiswaPage(),
+    // rekapMahasiswa: (_) => const RekapMatkulMahasiswaPage(),
+
+    // ADMIN
+    adminDashboard: (_) => const AdminDashboardPage(),
+    adminKelolaMatkul: (_) => const AdminKelolaMatkulPage(),
+    adminKelolaDosen: (_) => const AdminKelolaDosenPage(),
+    adminKelolaJadwal: (_) => const AdminKelolaJadwalPage(),
+    adminKelolaKelas: (_) => const AdminKelolaKelasPage(),
+    adminKelolaRuang: (_) => const AdminKelolaRuanganPage(),
+
+    // ASSIGN
+    adminAssignMatkul: (_) => const AdminAssignMatkulPage(),
   };
 
-  // ===== DYNAMIC ROUTES =====
+  // =====================================================
+  //              ROUTES WITH PARAMETERS (SAFE)
+  // =====================================================
   static Route<dynamic>? onGenerate(RouteSettings settings) {
     final args = settings.arguments;
 
     switch (settings.name) {
+      // PROFILE (FIXED)
+      case profile:
+        return MaterialPageRoute(
+          builder: (_) => ProfilePage(
+            role: (args is String) ? args : "", // default non-null
+          ),
+        );
+
+      // NOTIFICATION (FIXED)
       case notification:
-        if (args is String) {
-          return MaterialPageRoute(
-            builder: (_) => NotificationPage(role: args),
-          );
-        }
-        return _errorRoute("Notification membutuhkan 'role' (mhs/dsn)");
+        return MaterialPageRoute(
+          builder: (_) => NotificationPage(
+            role: (args is String) ? args : "", // default non-null
+          ),
+        );
 
+      // CREATE MAHASISWA
       case createMahasiswa:
-        if (args is Map<String, dynamic>) {
-          return MaterialPageRoute(
-            builder: (_) => CreateMahasiswaPage(biodata: args),
-          );
-        }
-        return _errorRoute("Parameter createMahasiswa tidak valid");
+        return MaterialPageRoute(
+          builder: (_) => CreateMahasiswaPage(
+            biodata: (args is Map<String, dynamic>) ? args : {},
+          ),
+        );
 
+      // CREATE DOSEN
       case createDosen:
-        if (args is Map<String, dynamic>) {
-          return MaterialPageRoute(
-            builder: (_) => CreateDosenPage(biodata: args),
-          );
-        }
-        return _errorRoute("Parameter createDosen tidak valid");
+        return MaterialPageRoute(
+          builder: (_) => CreateDosenPage(
+            biodata: (args is Map<String, dynamic>) ? args : {},
+          ),
+        );
     }
 
     return null;
   }
 
-  // ===== ERROR ROUTE =====
-  static Route<dynamic> _errorRoute(String message) {
+  // =====================================================
+  //                     ERROR PAGE
+  // =====================================================
+  static Route<dynamic> _error(String message) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(
         appBar: AppBar(title: const Text("Route Error")),
         body: Center(
           child: Text(
             message,
-            style: const TextStyle(fontSize: 16, color: Colors.red),
+            style: const TextStyle(color: Colors.red, fontSize: 16),
           ),
         ),
       ),

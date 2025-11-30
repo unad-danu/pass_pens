@@ -128,6 +128,17 @@ class AuthService {
         );
       }
 
+      // ---- ADMIN ----
+      if (role == "adm" || role == "admin") {
+        return UserModel(
+          id: userRes["id"],
+          email: userRes["email"],
+          role: role,
+          mahasiswa: null,
+          dosen: null,
+        );
+      }
+
       return null;
     } catch (e) {
       print("GET USER PROFILE ERROR: $e");

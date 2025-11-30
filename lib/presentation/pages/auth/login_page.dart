@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/register_page.dart';
 import '../../widgets/main_navigation.dart';
 import '../../widgets/custom_appbar.dart';
+import '../admin/admin_dashboard_page.dart';
 
 // Pakai prefix agar tidak tabrakan
 import '../home_mahasiswa_page.dart' as mhs;
@@ -102,8 +103,13 @@ class _LoginPageState extends State<LoginPage> {
 
       final role = data['role'];
 
-      // ============= MASUK KE MAIN NAVIGATION =============
-      if (role == "mhs" || role == "mahasiswa") {
+      // ============= MASUK KE MAIN NAVIGATION / ADMIN =============
+      if (role == "adm") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+        );
+      } else if (role == "mhs" || role == "mahasiswa") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => MainNavigation(role: "mahasiswa")),

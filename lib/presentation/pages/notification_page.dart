@@ -5,31 +5,33 @@ import '../pages/detail_matkul_mahasiswa_page.dart';
 import '../pages/detail_matkul_dosen_page.dart';
 
 class NotificationPage extends StatelessWidget {
-  final String role; // "dsn" atau "mhs"
+  final String? role; // NULLABLE FIXED
 
-  const NotificationPage({super.key, required this.role});
+  const NotificationPage({super.key, this.role});
 
   List<Map<String, dynamic>> getNotifications() {
-    if (role == "dsn") {
+    final r = role ?? ""; // FIX: handle null
+
+    if (r == "dsn") {
       return [
         {
           "title": "Praktikum Bahasa Pemrograman",
           "subtitle":
-              "Jadwal untuk matakuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+              "Jadwal untuk mata kuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
           "time": "5min",
           "highlight": true,
         },
         {
           "title": "Bahasa Pemrograman",
           "subtitle":
-              "Jadwal untuk matakuliah Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+              "Jadwal untuk mata kuliah Bahasa Pemrograman sudah tiba, silahkan buka presensi",
           "time": "1d",
           "highlight": false,
         },
         {
           "title": "Praktikum Bahasa Pemrograman",
           "subtitle":
-              "Jadwal untuk matakuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
+              "Jadwal untuk mata kuliah Praktikum Bahasa Pemrograman sudah tiba, silahkan buka presensi",
           "time": "1w",
           "highlight": false,
         },
@@ -41,21 +43,21 @@ class NotificationPage extends StatelessWidget {
       {
         "title": "Praktikum Bahasa Pemrograman",
         "subtitle":
-            "Dosen telah membuka presensi offline untuk matakuliah Praktikum Bahasa Pemrograman",
+            "Dosen telah membuka presensi offline untuk mata kuliah Praktikum Bahasa Pemrograman",
         "time": "5min",
         "highlight": true,
       },
       {
         "title": "Organisasi Mesin & Bahasa Assembly",
         "subtitle":
-            "Dosen telah membuka presensi online untuk matakuliah Bahasa Pemrograman",
+            "Dosen telah membuka presensi online untuk mata kuliah Bahasa Pemrograman",
         "time": "1d",
         "highlight": false,
       },
       {
         "title": "Sensor & Aktuator",
         "subtitle":
-            "Dosen telah membuka presensi offline untuk matakuliah Praktikum Bahasa Pemrograman",
+            "Dosen telah membuka presensi offline untuk mata kuliah Praktikum Bahasa Pemrograman",
         "time": "1d",
         "highlight": false,
       },
@@ -65,10 +67,11 @@ class NotificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notif = getNotifications();
+    final r = role ?? "";
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: CustomAppBar(role: role),
+      appBar: CustomAppBar(role: r),
 
       body: Column(
         children: [
@@ -95,9 +98,8 @@ class NotificationPage extends StatelessWidget {
                   time: n["time"],
                   highlight: n["highlight"],
 
-                  // ======== NAVIGASI JIKA DIKLIK ========
                   onTap: () {
-                    if (role == "mhs") {
+                    if (r == "mhs") {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
