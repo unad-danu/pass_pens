@@ -11,177 +11,500 @@ class AdminAssignMatkulPage extends StatefulWidget {
 class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
   final supabase = Supabase.instance.client;
 
-  int? selectedDosen;
-  int? selectedMatkul;
-  int? selectedRuang;
+  // Data dari DB
+  List<dynamic> prodiList = [];
+  List<dynamic> matkulList = [];
+  List<dynamic> dosenList = [];
+  List<dynamic> ruanganList = [];
+
+  // State pilihan
+  int? selectedProdiId;
+  int? selectedMatkulId;
+  int? selectedDosenId;
+  int? selectedRuanganId;
   String? selectedHari;
 
-  TimeOfDay? jamMulai;
-  TimeOfDay? jamSelesai;
+  // Kelas bisa banyak (A-E)
+  final List<String> kelasOptions = ["A", "B", "C", "D", "E"];
+  List<String> selectedKelasList = [];
 
-  List<dynamic> dosen = [];
-  List<dynamic> matkul = [];
-  List<dynamic> ruang = [];
+  // Slot waktu (pakai index 0..8)
+  int? startSlot;
+  int? endSlot;
+
+  bool isLoadingInitial = true;
+  bool isLoadingMatkul = false;
+  bool isLoadingDosen = false;
+  bool isSaving = false;
+
+  final List<Map<String, String>> slotWaktu = const [
+    {"label": "1. 08.00 - 08.50", "start": "08:00", "end": "08:50"},
+    {"label": "2. 08.50 - 09.40", "start": "08:50", "end": "09:40"},
+    {"label": "3. 09.40 - 10.30", "start": "09:40", "end": "10:30"},
+    {"label": "4. 10.30 - 11.20", "start": "10:30", "end": "11:20"},
+    {"label": "5. 11.20 - 12.10", "start": "11:20", "end": "12:10"},
+    {"label": "6. 13.00 - 13.50", "start": "13:00", "end": "13:50"},
+    {"label": "7. 13.50 - 14.40", "start": "13:50", "end": "14:40"},
+    {"label": "8. 14.40 - 15.30", "start": "14:40", "end": "15:30"},
+    {"label": "9. 15.30 - 16.20", "start": "15:30", "end": "16:20"},
+  ];
 
   @override
   void initState() {
     super.initState();
-    loadData();
+    _loadInitialData();
   }
 
-  Future loadData() async {
-    final d = await supabase.from('dosen').select();
-    final m = await supabase.from('matkul').select();
-    final r = await supabase.from('ruang').select();
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
+  // ================= LOAD DATA AWAL =================
+
+  Future<void> _loadInitialData() async {
+    try {
+      final prodiRes = await supabase.from('prodi').select('id,nama');
+      final ruanganRes = await supabase.from('ruangan').select('id,nama');
+
+      setState(() {
+        prodiList = prodiRes as List<dynamic>;
+        ruanganList = ruanganRes as List<dynamic>;
+        isLoadingInitial = false;
+      });
+    } catch (e) {
+      _showMessage("Gagal load data awal: $e");
+      setState(() => isLoadingInitial = false);
+    }
+  }
+
+  Future<void> _loadMatkulByProdi(int prodiId) async {
     setState(() {
-      dosen = d;
-      matkul = m;
-      ruang = r;
+      isLoadingMatkul = true;
+      matkulList = [];
+      selectedMatkulId = null;
     });
+
+    try {
+      final data = await supabase
+          .from('matkul')
+          .select('id, kode_mk, nama_mk, semester, prodi_id')
+          .eq('prodi_id', prodiId)
+          .order('semester', ascending: true);
+
+      setState(() {
+        matkulList = data as List<dynamic>;
+        isLoadingMatkul = false;
+      });
+    } catch (e) {
+      _showMessage("Gagal load matkul: $e");
+      setState(() => isLoadingMatkul = false);
+    }
   }
 
-  Future assign() async {
-    if (selectedDosen == null ||
-        selectedMatkul == null ||
-        selectedRuang == null ||
+  Future<void> _loadDosenByProdi(int prodiId) async {
+    setState(() {
+      isLoadingDosen = true;
+      dosenList = [];
+      selectedDosenId = null;
+    });
+
+    try {
+      final result = await supabase
+          .from('dosen_prodi')
+          .select('dosen (id, nama)')
+          .eq('prodi_id', prodiId);
+
+      final list = <dynamic>[];
+      for (final row in result as List<dynamic>) {
+        if (row['dosen'] != null) list.add(row['dosen']);
+      }
+
+      setState(() {
+        dosenList = list;
+        isLoadingDosen = false;
+      });
+    } catch (e) {
+      _showMessage("Gagal load dosen: $e");
+      setState(() => isLoadingDosen = false);
+    }
+  }
+
+  // =============== KELAS MK (A-E) ===============
+
+  /// Ambil atau buat kelas_mk untuk mk_id & nama_kelas tertentu
+  Future<int> _getOrCreateKelas(int mkId, String kelas) async {
+    try {
+      final cek = await supabase
+          .from('kelas_mk')
+          .select('id')
+          .eq('mk_id', mkId)
+          .eq('nama_kelas', kelas)
+          .maybeSingle();
+
+      if (cek != null) {
+        return cek['id'] as int;
+      }
+
+      final insert = await supabase
+          .from('kelas_mk')
+          .insert({'mk_id': mkId, 'nama_kelas': kelas})
+          .select('id')
+          .single();
+
+      return insert['id'] as int;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Dialog multi-select kelas A-E
+  Future<void> _pickKelasDialog() async {
+    final tempSelected = Set<String>.from(selectedKelasList);
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Pilih Kelas (bisa lebih dari satu)"),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: kelasOptions.map((k) {
+                  final checked = tempSelected.contains(k);
+                  return CheckboxListTile(
+                    dense: true,
+                    title: Text("Kelas $k"),
+                    value: checked,
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        if (val == true) {
+                          tempSelected.add(k);
+                        } else {
+                          tempSelected.remove(k);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  selectedKelasList = tempSelected.toList()..sort();
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // =============== SIMPAN JADWAL ===============
+
+  Future<void> _simpan() async {
+    if (selectedProdiId == null ||
+        selectedMatkulId == null ||
+        selectedDosenId == null ||
+        selectedRuanganId == null ||
         selectedHari == null ||
-        jamMulai == null ||
-        jamSelesai == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Semua data harus diisi")));
+        selectedKelasList.isEmpty ||
+        startSlot == null ||
+        endSlot == null) {
+      _showMessage(
+        "Harap isi semua field (termasuk pilih minimal satu kelas)!",
+      );
       return;
     }
 
-    // 1. buat kelas mk
-    final kelas = await supabase
-        .from('kelas_mk')
-        .insert({
-          'mk_id': selectedMatkul,
-          'dsn_id': selectedDosen,
-          'nama_kelas': "Kelas ${DateTime.now().millisecondsSinceEpoch}",
-        })
-        .select()
-        .single();
+    if (endSlot! < startSlot!) {
+      _showMessage("Slot akhir harus >= slot awal.");
+      return;
+    }
 
-    // 2. buat jadwal
-    await supabase.from('jadwal').insert({
-      'kelas_id': kelas['id'],
-      'hari': selectedHari,
-      'jam_mulai': "${jamMulai!.hour}:${jamMulai!.minute}",
-      'jam_selesai': "${jamSelesai!.hour}:${jamSelesai!.minute}",
-      'ruang_id': selectedRuang,
-    });
+    final jamMulai = slotWaktu[startSlot!]['start']!;
+    final jamSelesai = slotWaktu[endSlot!]['end']!;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Berhasil assign matkul ke dosen")),
-    );
+    try {
+      setState(() => isSaving = true);
+
+      // Untuk setiap kelas yang dipilih (A, B, C, ...)
+      for (final kelas in selectedKelasList) {
+        // 1. pastikan kelas_mk ada
+        final kelasId = await _getOrCreateKelas(selectedMatkulId!, kelas);
+
+        // 2. insert jadwal untuk kelas tersebut
+        await supabase.from('jadwal').insert({
+          'matkul_id': selectedMatkulId,
+          'dosen_id': selectedDosenId,
+          'ruangan_id': selectedRuanganId,
+          'hari': selectedHari,
+          'jam_mulai': jamMulai,
+          'jam_selesai': jamSelesai,
+          'kelas_id': kelasId,
+        });
+      }
+
+      setState(() => isSaving = false);
+      _showMessage(
+        "Jadwal berhasil ditambahkan untuk kelas: ${selectedKelasList.join(', ')}",
+      );
+
+      // reset pilihan (kecuali prodi agar bisa lanjut input)
+      setState(() {
+        selectedMatkulId = null;
+        selectedDosenId = null;
+        selectedRuanganId = null;
+        selectedHari = null;
+        startSlot = null;
+        endSlot = null;
+        selectedKelasList = [];
+        matkulList = [];
+        dosenList = [];
+      });
+    } catch (e) {
+      setState(() => isSaving = false);
+      _showMessage("Gagal menyimpan jadwal: $e");
+    }
   }
+
+  // =============== UI ===============
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Assign Matkul ke Dosen")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            const Text("Pilih Dosen"),
-            DropdownButton<int>(
-              value: selectedDosen,
-              items: dosen
-                  .map<DropdownMenuItem<int>>(
-                    (e) => DropdownMenuItem(
-                      value: e['id'],
-                      child: Text(e['nama'] ?? "-"),
+      body: isLoadingInitial
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // PRODI
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: "Pilih Prodi",
+                      ),
+                      value: selectedProdiId,
+                      items: prodiList
+                          .map(
+                            (p) => DropdownMenuItem<int>(
+                              value: p['id'] as int,
+                              child: Text(p['nama'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          selectedProdiId = v;
+                          selectedMatkulId = null;
+                          selectedDosenId = null;
+                          selectedKelasList = [];
+                          matkulList = [];
+                          dosenList = [];
+                        });
+                        _loadMatkulByProdi(v);
+                        _loadDosenByProdi(v);
+                      },
                     ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => selectedDosen = v),
-            ),
 
-            const SizedBox(height: 20),
-            const Text("Pilih Mata Kuliah"),
-            DropdownButton<int>(
-              value: selectedMatkul,
-              items: matkul
-                  .map<DropdownMenuItem<int>>(
-                    (e) => DropdownMenuItem(
-                      value: e['id'],
-                      child: Text(e['nama_mk']),
+                    const SizedBox(height: 16),
+
+                    // MATKUL
+                    isLoadingMatkul
+                        ? const LinearProgressIndicator()
+                        : DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: "Pilih Matkul",
+                            ),
+                            value: selectedMatkulId,
+                            items: matkulList.map((m) {
+                              final semester = m['semester'] ?? '-';
+                              return DropdownMenuItem<int>(
+                                value: m['id'] as int,
+                                child: Text(
+                                  "(${m['kode_mk']}) ${m['nama_mk']} — Semester $semester",
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (v) {
+                              setState(() {
+                                selectedMatkulId = v;
+                                selectedKelasList = [];
+                              });
+                            },
+                          ),
+
+                    const SizedBox(height: 16),
+
+                    // KELAS (multi)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Pilih Kelas",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => selectedMatkul = v),
-            ),
-
-            const SizedBox(height: 20),
-            const Text("Pilih Ruang"),
-            DropdownButton<int>(
-              value: selectedRuang,
-              items: ruang
-                  .map<DropdownMenuItem<int>>(
-                    (e) => DropdownMenuItem(
-                      value: e['id'],
-                      child: Text(e['kode_ruang']),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: selectedMatkulId == null
+                                ? null
+                                : _pickKelasDialog,
+                            child: const Text("Pilih Kelas (A–E)"),
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => selectedRuang = v),
-            ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        selectedKelasList.isEmpty
+                            ? "Belum memilih kelas"
+                            : "Dipilih: ${selectedKelasList.join(', ')}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: selectedKelasList.isEmpty
+                              ? Colors.red
+                              : Colors.green[700],
+                        ),
+                      ),
+                    ),
 
-            const SizedBox(height: 20),
-            const Text("Pilih Hari"),
-            DropdownButton<String>(
-              value: selectedHari,
-              items: [
-                "Senin",
-                "Selasa",
-                "Rabu",
-                "Kamis",
-                "Jumat",
-                "Sabtu",
-              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) => setState(() => selectedHari = v),
-            ),
+                    const SizedBox(height: 16),
 
-            const SizedBox(height: 20),
-            ElevatedButton(
-              child: Text(
-                jamMulai == null
-                    ? "Pilih Jam Mulai"
-                    : "Mulai: ${jamMulai!.format(context)}",
+                    // DOSEN
+                    isLoadingDosen
+                        ? const LinearProgressIndicator()
+                        : DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: "Pilih Dosen",
+                            ),
+                            value: selectedDosenId,
+                            items: dosenList
+                                .map(
+                                  (d) => DropdownMenuItem<int>(
+                                    value: d['id'] as int,
+                                    child: Text(d['nama'] as String),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => selectedDosenId = v),
+                          ),
+
+                    const SizedBox(height: 16),
+
+                    // RUANGAN
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: "Pilih Ruangan",
+                      ),
+                      value: selectedRuanganId,
+                      items: ruanganList
+                          .map(
+                            (r) => DropdownMenuItem<int>(
+                              value: r['id'] as int,
+                              child: Text(r['nama'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => selectedRuanganId = v),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // HARI
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: "Pilih Hari",
+                      ),
+                      value: selectedHari,
+                      items: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]
+                          .map(
+                            (h) => DropdownMenuItem<String>(
+                              value: h,
+                              child: Text(h),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => selectedHari = v),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // SLOT MULAI
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: "Slot Mulai",
+                      ),
+                      value: startSlot,
+                      items: List.generate(
+                        slotWaktu.length,
+                        (i) => DropdownMenuItem<int>(
+                          value: i,
+                          child: Text(slotWaktu[i]['label']!),
+                        ),
+                      ),
+                      onChanged: (v) => setState(() => startSlot = v),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // SLOT AKHIR
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: "Slot Akhir",
+                      ),
+                      value: endSlot,
+                      items: List.generate(
+                        slotWaktu.length,
+                        (i) => DropdownMenuItem<int>(
+                          value: i,
+                          child: Text(slotWaktu[i]['label']!),
+                        ),
+                      ),
+                      onChanged: (v) => setState(() => endSlot = v),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isSaving ? null : _simpan,
+                        child: isSaving
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text("Simpan"),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              onPressed: () async {
-                final t = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (t != null) setState(() => jamMulai = t);
-              },
             ),
-
-            ElevatedButton(
-              child: Text(
-                jamSelesai == null
-                    ? "Pilih Jam Selesai"
-                    : "Selesai: ${jamSelesai!.format(context)}",
-              ),
-              onPressed: () async {
-                final t = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (t != null) setState(() => jamSelesai = t);
-              },
-            ),
-
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: assign, child: const Text("Simpan")),
-          ],
-        ),
-      ),
     );
   }
 }

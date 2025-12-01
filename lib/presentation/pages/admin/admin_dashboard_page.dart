@@ -48,6 +48,16 @@ class AdminDashboardPage extends StatelessWidget {
             onTap: () =>
                 Navigator.pushNamed(context, AppRoutes.adminKelolaRuang),
           ),
+
+          // ============================
+          // MENU BARU: ASSIGN MATKUL
+          // ============================
+          _menuItem(
+            icon: Icons.add_task,
+            title: "Assign Matkul",
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.adminAssignMatkul),
+          ),
         ],
       ),
     );
