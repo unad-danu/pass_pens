@@ -29,45 +29,68 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 95,
       centerTitle: true,
 
-      title: SizedBox(
-        width: double.infinity,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Image.asset("assets/logoPENS.png", height: 38),
+      // ================================
+      // CENTER TITLE BENAR-BENAR CENTER
+      // ================================
+      title: Stack(
+        alignment: Alignment.center,
+        children: [
+          // LOGO KIRI
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Image.asset("assets/logoPENS.png", height: 38),
+            ),
+          ),
 
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "PASS",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+          // ------------------------------
+          // TULISAN BAGIAN TENGAH (BENAR2 CENTER)
+          // ------------------------------
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "PASS",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-                const Text(
-                  "PENS Attendance Smart System",
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                if (title != null) ...[
-                  SizedBox(height: 4),
-                  Text(
+              ),
+              const Text(
+                "PENS Attendance Smart System",
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              if (title != null) ...[
+                const SizedBox(height: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: Text(
                     title!,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
+          ),
 
-            Image.asset("assets/PASS.png", height: 38),
-          ],
-        ),
+          // LOGO KANAN
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Image.asset("assets/PASS.png", height: 38),
+            ),
+          ),
+        ],
       ),
 
       bottom: PreferredSize(

@@ -95,7 +95,7 @@ class _AdminKelolaRuanganPageState extends State<AdminKelolaRuanganPage> {
                         'kapasitas': kapasitas,
                         'lokasi': lokasi,
                       })
-                      .eq('id', existing!['id']);
+                      .eq('id', existing['id']);
                 } else {
                   await supabase.from('ruangan').insert({
                     'kode': kode,

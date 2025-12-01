@@ -17,6 +17,17 @@ class DetailMatkulDosenPage extends StatelessWidget {
   Widget build(BuildContext context) {
     const String attendanceTerakhir = "Selasa, 11 November 2025";
 
+    // DATA HADIR / TIDAK HADIR
+    final List<Map<String, String>> dataMahasiswa = [
+      {"nama": "Ari Tejo", "status": "Hadir"},
+      {"nama": "Bagas Dwi", "status": "Tidak Hadir"},
+      {"nama": "Cindy Lestari", "status": "Hadir"},
+      {"nama": "Dimas Saputra", "status": "Hadir"},
+    ];
+
+    final tidakHadir = dataMahasiswa.where((m) => m["status"] == "Tidak Hadir");
+    final hadir = dataMahasiswa.where((m) => m["status"] == "Hadir");
+
     return Scaffold(
       appBar: const CustomAppBar(showBack: false, role: "dsn"),
 
@@ -31,20 +42,16 @@ class DetailMatkulDosenPage extends StatelessWidget {
             Stack(
               alignment: Alignment.center,
               children: [
-                // Tombol Back di kiri
                 Align(
                   alignment: Alignment.centerLeft,
                   child: InkWell(
                     onTap: () => Navigator.pop(context),
-                    borderRadius: BorderRadius.circular(50),
                     child: const Padding(
                       padding: EdgeInsets.all(8.0),
                       child: Icon(Icons.arrow_back, size: 28),
                     ),
                   ),
                 ),
-
-                // Judul di tengah
                 const Text(
                   "Detail Matakuliah",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -66,7 +73,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header hitam
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -86,7 +92,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 12),
-
                   const Text("Dosen : "),
                   const SizedBox(height: 4),
                   Text("Tempat : $ruangan"),
@@ -97,7 +102,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-                  // Tombol Offline Presensi
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -115,7 +119,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Tombol Online Presensi
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -147,7 +150,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Header hitam
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -168,14 +170,12 @@ class DetailMatkulDosenPage extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Tabel ID + Tanggal
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.black),
                     ),
                     child: Column(
                       children: [
-                        // Header tabel
                         Container(
                           color: Colors.lightBlueAccent.withOpacity(0.3),
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -199,7 +199,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
                           ),
                         ),
 
-                        // Isi tabel dummy
                         for (var item in [
                           {"id": "1064", "tgl": "Selasa, 11 November 2025"},
                           {"id": "1043", "tgl": "Selasa, 11 November 2025"},
@@ -240,7 +239,7 @@ class DetailMatkulDosenPage extends StatelessWidget {
             const SizedBox(height: 25),
 
             // ============================
-            // TABEL HADIR / TIDAK HADIR
+            // TABEL HADIR / TIDAK HADIR (SUDAH DIBUAT SESUAI PERMINTAAN)
             // ============================
             Container(
               padding: const EdgeInsets.all(12),
@@ -250,7 +249,6 @@ class DetailMatkulDosenPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Header hitam
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -260,7 +258,7 @@ class DetailMatkulDosenPage extends StatelessWidget {
                     ),
                     child: const Center(
                       child: Text(
-                        "Hadir / Tidak Hadir",
+                        "Presensi Mahasiswa",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -271,77 +269,95 @@ class DetailMatkulDosenPage extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Tabel
+                  // ============================
+                  // LIST TIDAK HADIR
+                  // ============================
                   Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                    ),
-                    child: Column(
-                      children: [
-                        // Header tabel
-                        Container(
-                          color: Colors.lightBlueAccent.withOpacity(0.3),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: const Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  "Mahasiswa",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "Status",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Dummy data
-                        for (var mhs in [
-                          {"nama": "Ari Tejo", "status": "Hadir"},
-                          {"nama": "Bagas Dwi", "status": "Tidak Hadir"},
-                          {"nama": "Cindy Lestari", "status": "Hadir"},
-                          {"nama": "Dimas Saputra", "status": "Hadir"},
-                        ])
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(color: Colors.grey.shade300),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    mhs["nama"]!,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    mhs["status"]!,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: mhs["status"] == "Hadir"
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    color: Colors.lightBlueAccent.withOpacity(0.3),
+                    child: const Text(
+                      "Tidak Hadir",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
+
+                  for (var mhs in tidakHadir)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              mhs["nama"]!,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              mhs["status"]!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+
+                  // ============================
+                  // LIST HADIR
+                  // ============================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    color: Colors.lightBlueAccent.withOpacity(0.3),
+                    child: const Text(
+                      "Hadir",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                  for (var mhs in hadir)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              mhs["nama"]!,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              mhs["status"]!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
