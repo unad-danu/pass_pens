@@ -26,10 +26,31 @@ class DetailRekapMatkulPage extends StatelessWidget {
     double persen = belumDimulai ? 0 : (totalHadir / absensi.length);
 
     return Scaffold(
-      appBar: CustomAppBar(role: "mhs", title: namaMatkul),
+      appBar: CustomAppBar(role: "mhs"),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: InkWell(
+                  onTap: () => Navigator.pop(context),
+                  borderRadius: BorderRadius.circular(50),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(Icons.arrow_back, size: 28),
+                  ),
+                ),
+              ),
+              const Text(
+                "Rekap Presensi",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
           FadeInDown(
             duration: const Duration(milliseconds: 500),
             child: _RekapHeader(
@@ -47,12 +68,12 @@ class DetailRekapMatkulPage extends StatelessWidget {
           // LIST PERTEMUAN
           ...List.generate(totalPertemuan, (i) {
             int? status = i < absensi.length ? absensi[i] : null;
-
+            DateTime baseDate = DateTime(2024, 11, 1);
             return FadeInUp(
               duration: Duration(milliseconds: 300 + (i * 70)),
               child: _PertemuanCard(
                 nomor: i + 1,
-                tanggal: "2024-11-${(i + 1).toString().padLeft(2, '0')}",
+                tanggal: baseDate.add(Duration(days: i * 7)),
                 status: status,
                 belumDimulai: belumDimulai,
               ),
@@ -243,7 +264,7 @@ class _RekapHeader extends StatelessWidget {
 //
 class _PertemuanCard extends StatelessWidget {
   final int nomor;
-  final String tanggal;
+  final DateTime tanggal;
   final int? status;
   final bool belumDimulai;
 
@@ -253,6 +274,38 @@ class _PertemuanCard extends StatelessWidget {
     required this.status,
     required this.belumDimulai,
   });
+
+  String formatTanggal(DateTime date) {
+    const hari = [
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+      "Minggu",
+    ];
+
+    const bulan = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+
+    String namaHari = hari[date.weekday - 1];
+    String namaBulan = bulan[date.month - 1];
+
+    return "$namaHari, ${date.day} $namaBulan ${date.year}";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -286,39 +339,36 @@ class _PertemuanCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: belumDimulai ? Colors.grey : Colors.blue,
-            child: Text(
-              nomor.toString(),
-              style: const TextStyle(color: Colors.white),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Pertemuan $nomor",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  formatTanggal(tanggal),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 14),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Pertemuan $nomor",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text("Tanggal: $tanggal"),
-            ],
-          ),
-
-          const Spacer(),
 
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 4),
-              Text(
-                statusText,
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              Flexible(
+                child: Text(
+                  statusText,
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                ),
               ),
             ],
           ),

@@ -150,17 +150,22 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
       }
 
       // 4. INSERT KE MAHASISWA (PAKAI userId INTEGER)
-      await supabase.from('mahasiswa').insert({
-        'user_id': userId,
-        'nrp': widget.biodata['nrp'],
-        'nama': widget.biodata['nama'],
-        'email': email,
-        'phone': widget.biodata['phone'],
-        'email_recovery': widget.biodata['email_recovery'],
-        'angkatan': int.parse(widget.biodata['angkatan']),
-        'prodi': prodiName,
-        'prodi_id': prodiId,
-      });
+      await supabase
+          .from('mahasiswa')
+          .insert({
+            'id_auth': authUid,
+            'user_id': userId,
+            'nrp': widget.biodata['nrp'],
+            'nama': widget.biodata['nama'],
+            'email': email,
+            'phone': widget.biodata['phone'],
+            'email_recovery': widget.biodata['email_recovery'],
+            'angkatan': int.parse(widget.biodata['angkatan']),
+            'prodi': prodiName,
+            'prodi_id': prodiId,
+          })
+          .select()
+          .single();
 
       ScaffoldMessenger.of(
         context,

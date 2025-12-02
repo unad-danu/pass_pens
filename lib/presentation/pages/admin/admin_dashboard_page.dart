@@ -7,11 +7,8 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard Admin"),
-        centerTitle: true,
-        backgroundColor: Colors.blueGrey,
-      ),
+      appBar: const CustomAppBarAdmin(title: "Dashboard Admin"),
+
       body: GridView.count(
         padding: const EdgeInsets.all(20),
         crossAxisCount: 2,
@@ -48,10 +45,6 @@ class AdminDashboardPage extends StatelessWidget {
             onTap: () =>
                 Navigator.pushNamed(context, AppRoutes.adminKelolaRuang),
           ),
-
-          // ============================
-          // MENU BARU: ASSIGN MATKUL
-          // ============================
           _menuItem(
             icon: Icons.add_task,
             title: "Assign Matkul",
@@ -63,7 +56,10 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _menuItem({
+  // ====================================================
+  // WIDGET MENU ITEM
+  // ====================================================
+  static Widget _menuItem({
     required IconData icon,
     required String title,
     required Function() onTap,
@@ -87,4 +83,81 @@ class AdminDashboardPage extends StatelessWidget {
       ),
     );
   }
+}
+
+// ====================================================
+// CUSTOM APP BAR ADMIN (GAYA MAHASISWA TANPA LOGO)
+// ====================================================
+class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
+  final String? title;
+
+  const CustomAppBarAdmin({super.key, this.title});
+
+  static const double _bottomLineHeight = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: const Color(0xFF0B5E86),
+      automaticallyImplyLeading: false,
+      elevation: 0,
+      toolbarHeight: 95,
+      centerTitle: true,
+
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "PASS",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Text(
+            "PENS Attendance Smart System",
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          if (title != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              title!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+
+      // TOMBOL LOGOUT
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.login,
+              (route) => false,
+            );
+          },
+        ),
+      ],
+
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(_bottomLineHeight),
+        child: Container(
+          height: _bottomLineHeight,
+          color: const Color(0xFFF4C400),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(95 + _bottomLineHeight);
 }
