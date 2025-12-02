@@ -24,8 +24,8 @@ import '../presentation/pages/rekap_matkul_dosen_page.dart';
 import '../presentation/pages/admin/admin_dashboard_page.dart';
 import '../presentation/pages/admin/admin_kelola_matkul_page.dart';
 import '../presentation/pages/admin/admin_kelola_dosen_page.dart';
-import '../presentation/pages/admin/admin_kelola_jadwal_page.dart';
-import '../presentation/pages/admin/admin_kelola_kelas_page.dart';
+import '../presentation/pages/admin/notused_admin_kelola_jadwal_page.dart';
+import '../presentation/pages/admin/notused_admin_kelola_kelas_page.dart';
 import '../presentation/pages/admin/admin_kelola_ruangan_page.dart';
 import '../presentation/pages/admin/admin_assign_matkul_page.dart';
 
@@ -60,8 +60,8 @@ class AppRoutes {
   static const String adminDashboard = '/admin/dashboard';
   static const String adminKelolaMatkul = '/admin/kelola-matkul';
   static const String adminKelolaDosen = '/admin/kelola-dosen';
-  static const String adminKelolaJadwal = '/admin/kelola-jadwal';
-  static const String adminKelolaKelas = '/admin/kelola-kelas';
+  // static const String adminKelolaJadwal = '/admin/kelola-jadwal';
+  // static const String adminKelolaKelas = '/admin/kelola-kelas';
   static const String adminKelolaRuang = '/admin/kelola-ruang';
 
   // Assign Matkul
@@ -89,8 +89,8 @@ class AppRoutes {
     adminDashboard: (_) => const AdminDashboardPage(),
     adminKelolaMatkul: (_) => const AdminKelolaMatkulPage(),
     adminKelolaDosen: (_) => const AdminKelolaDosenPage(),
-    adminKelolaJadwal: (_) => const AdminKelolaJadwalPage(),
-    adminKelolaKelas: (_) => const AdminKelolaKelasPage(),
+    // adminKelolaJadwal: (_) => const AdminKelolaJadwalPage(),
+    // adminKelolaKelas: (_) => const AdminKelolaKelasPage(),
     adminKelolaRuang: (_) => const AdminKelolaRuanganPage(),
 
     // ASSIGN

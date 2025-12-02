@@ -27,18 +27,18 @@ class AdminDashboardPage extends StatelessWidget {
             onTap: () =>
                 Navigator.pushNamed(context, AppRoutes.adminKelolaDosen),
           ),
-          _menuItem(
-            icon: Icons.schedule,
-            title: "Kelola Jadwal",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminKelolaJadwal),
-          ),
-          _menuItem(
-            icon: Icons.class_,
-            title: "Kelola Kelas",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminKelolaKelas),
-          ),
+          // _menuItem(
+          // icon: Icons.schedule,
+          // title: "Kelola Jadwal",
+          // onTap: () =>
+          //     Navigator.pushNamed(context, AppRoutes.adminKelolaJadwal),
+          // ),
+          // _menuItem(
+          // icon: Icons.class_,
+          // title: "Kelola Kelas",
+          // onTap: () =>
+          //    Navigator.pushNamed(context, AppRoutes.adminKelolaKelas),
+          //),
           _menuItem(
             icon: Icons.meeting_room,
             title: "Kelola Ruang",

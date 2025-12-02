@@ -166,29 +166,31 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
       builder: (ctx) {
         return AlertDialog(
           title: const Text("Pilih Kelas (bisa lebih dari satu)"),
-          content: StatefulBuilder(
-            builder: (context, setStateDialog) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: kelasOptions.map((k) {
-                  final checked = tempSelected.contains(k);
-                  return CheckboxListTile(
-                    dense: true,
-                    title: Text("Kelas $k"),
-                    value: checked,
-                    onChanged: (val) {
-                      setStateDialog(() {
-                        if (val == true) {
-                          tempSelected.add(k);
-                        } else {
-                          tempSelected.remove(k);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              );
-            },
+          content: SingleChildScrollView(
+            child: StatefulBuilder(
+              builder: (context, setStateDialog) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: kelasOptions.map((k) {
+                    final checked = tempSelected.contains(k);
+                    return CheckboxListTile(
+                      dense: true,
+                      title: Text("Kelas $k"),
+                      value: checked,
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          if (val == true) {
+                            tempSelected.add(k);
+                          } else {
+                            tempSelected.remove(k);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                );
+              },
+            ),
           ),
           actions: [
             TextButton(
@@ -290,9 +292,11 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
               padding: const EdgeInsets.all(16),
               child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // PRODI
                     DropdownButtonFormField<int>(
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: "Pilih Prodi",
                       ),
@@ -326,6 +330,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                     isLoadingMatkul
                         ? const LinearProgressIndicator()
                         : DropdownButtonFormField<int>(
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: "Pilih Matkul",
                             ),
@@ -336,6 +341,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                                 value: m['id'] as int,
                                 child: Text(
                                   "(${m['kode_mk']}) ${m['nama_mk']} — Semester $semester",
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               );
@@ -359,17 +365,11 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: selectedMatkulId == null
-                                ? null
-                                : _pickKelasDialog,
-                            child: const Text("Pilih Kelas (A–E)"),
-                          ),
-                        ),
-                      ],
+                    OutlinedButton(
+                      onPressed: selectedMatkulId == null
+                          ? null
+                          : _pickKelasDialog,
+                      child: const Text("Pilih Kelas (A–E)"),
                     ),
                     const SizedBox(height: 8),
                     Align(
@@ -393,6 +393,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                     isLoadingDosen
                         ? const LinearProgressIndicator()
                         : DropdownButtonFormField<int>(
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: "Pilih Dosen",
                             ),
@@ -413,6 +414,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
 
                     // RUANGAN
                     DropdownButtonFormField<int>(
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: "Pilih Ruangan",
                       ),
@@ -432,6 +434,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
 
                     // HARI
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: "Pilih Hari",
                       ),
@@ -451,6 +454,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
 
                     // SLOT MULAI
                     DropdownButtonFormField<int>(
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: "Slot Mulai",
                       ),
@@ -469,6 +473,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
 
                     // SLOT AKHIR
                     DropdownButtonFormField<int>(
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: "Slot Akhir",
                       ),

@@ -29,103 +29,95 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
   String _formatTime(dynamic t) {
     if (t == null) return "-";
     final s = t.toString();
-    if (s.length >= 5) return s.substring(0, 5);
-    return s;
+    return s.length >= 5 ? s.substring(0, 5) : s;
   }
 
-  Future<void> loadJadwalMahasiswa() async {
-    try {
-      setState(() {
-        loading = true;
-        errorMessage = null;
-        dataJadwal = [];
-      });
+  Future<List<dynamic>> loadJadwalMahasiswa() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-      final authUser = supabase.auth.currentUser;
-      if (authUser == null) {
-        throw "Tidak ada user login";
-      }
-
-      // Cari mahasiswa berdasarkan id_auth
-      final mhsRow = await supabase
-          .from('mahasiswa')
-          .select('id')
-          .eq('id_auth', authUser.id)
-          .maybeSingle();
-
-      if (mhsRow == null) {
-        throw "Data mahasiswa tidak ditemukan";
-      }
-
-      final int mhsId = mhsRow['id'] as int;
-
-      // Ambil mata kuliah yang diambil mahasiswa (ambil_mk) + join ke jadwal, matkul, dosen, ruangan
-      final res = await supabase
-          .from('ambil_mk')
-          .select('''
-            id,
-            jadwal_id,
-            jadwal (
-              id,
-              hari,
-              jam_mulai,
-              jam_selesai,
-              matkul:matkul_id ( id, nama_mk, kode_mk ),
-              dosen:dosen_id ( id, nama ),
-              ruangan:ruangan_id ( id, nama, kode, lokasi )
-            )
-          ''')
-          .eq('mhs_id', mhsId);
-
-      if (!mounted) return;
-
-      setState(() {
-        dataJadwal = List<Map<String, dynamic>>.from(res as List<dynamic>);
-        loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-        errorMessage = e.toString();
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Gagal memuat jadwal: $e")));
+    if (user == null) {
+      throw Exception("User tidak ditemukan");
     }
+
+    // 1. Ambil data mahasiswa
+    final mhsRes = await supabase
+        .from('mahasiswa')
+        .select('id, prodi_id, kelas')
+        .eq('id_auth', user.id)
+        .maybeSingle();
+
+    if (mhsRes == null) {
+      throw Exception("Data mahasiswa tidak ditemukan");
+    }
+
+    final int prodiId = mhsRes['prodi_id'];
+    final String kelasMahasiswa = mhsRes['kelas'];
+
+    // 2. Ambil jadwal sesuai prodi + kelas
+    final jadwalRes = await supabase
+        .from('jadwal')
+        .select('''
+        id,
+        hari,
+        jam_mulai,
+        jam_selesai,
+        kelas_mk (
+          id,
+          nama_kelas
+        ),
+        matkul (
+          id,
+          nama_mk,
+          kode_mk,
+          prodi_id
+        ),
+        dosen (
+          id,
+          nama
+        ),
+        ruangan (
+          id,
+          nama
+        )
+      ''')
+        .eq('matkul.prodi_id', prodiId) // filter prodi
+        .eq('kelas_mk.nama_kelas', kelasMahasiswa) // filter kelas
+        .order('hari')
+        .order('jam_mulai');
+
+    // Supabase V2: hasilnya langsung List<dynamic>
+    return jadwalRes;
   }
 
   @override
   Widget build(BuildContext context) {
+    // Filter Search
     List<Map<String, dynamic>> filtered = dataJadwal.where((item) {
-      final jadwal = item['jadwal'];
-      final mk = jadwal?['matkul']?['nama_mk'] ?? '';
+      final mk = item['matkul']?['nama_mk'] ?? '';
       return mk.toString().toLowerCase().contains(search.toLowerCase());
     }).toList();
 
+    // Sorting
     filtered.sort((a, b) {
-      final mkA = a['jadwal']?['matkul']?['nama_mk'] ?? "";
-      final mkB = b['jadwal']?['matkul']?['nama_mk'] ?? "";
+      final mkA = a['matkul']?['nama_mk'] ?? "";
+      final mkB = b['matkul']?['nama_mk'] ?? "";
       return ascending ? mkA.compareTo(mkB) : mkB.compareTo(mkA);
     });
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const CustomAppBar(role: "mhs"),
-
       body: Column(
         children: [
           const SizedBox(height: 10),
-
           const Text(
             "Home",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 12),
 
-          // SEARCH + SORT
+          // === SEARCH & SORT ===
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -149,9 +141,7 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                     onChanged: (v) => setState(() => search = v),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -174,45 +164,33 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                 ? const Center(child: CircularProgressIndicator())
                 : errorMessage != null
                 ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        "Terjadi kesalahan:\n$errorMessage",
-                        textAlign: TextAlign.center,
-                      ),
+                    child: Text(
+                      "Terjadi kesalahan:\n$errorMessage",
+                      textAlign: TextAlign.center,
                     ),
                   )
                 : filtered.isEmpty
-                ? const Center(child: Text("Tidak ada mata kuliah"))
+                ? const Center(child: Text("Tidak ada jadwal"))
                 : RefreshIndicator(
                     onRefresh: loadJadwalMahasiswa,
                     child: ListView.builder(
                       itemCount: filtered.length,
                       itemBuilder: (context, index) {
                         final row = filtered[index];
-                        final jadwal = row['jadwal'] ?? {};
 
-                        final matkul = jadwal['matkul'] ?? {};
-                        final dosen = jadwal['dosen'] ?? {};
-                        final ruangan = jadwal['ruangan'] ?? {};
+                        final matkul = row['matkul'] ?? {};
+                        final dosen = row['dosen'] ?? {};
+                        final ruangan = row['ruangan'] ?? {};
 
-                        final String namaMatkul =
-                            matkul['nama_mk']?.toString() ?? "";
-                        final String dosenNama =
-                            dosen['nama']?.toString() ?? "";
-                        final String ruanganNama =
-                            ruangan['nama']?.toString() ?? "";
+                        final namaMatkul = matkul['nama_mk'] ?? "Tanpa Nama";
+                        final dosenNama = dosen['nama'] ?? "Tidak diketahui";
+                        final ruanganNama =
+                            ruangan['nama'] ?? "Tidak ada ruang";
 
-                        final String jamMulai = _formatTime(
-                          jadwal['jam_mulai'],
-                        );
-                        final String jamSelesai = _formatTime(
-                          jadwal['jam_selesai'],
-                        );
-                        final String jamGabung = "$jamMulai - $jamSelesai";
+                        final jam =
+                            "${_formatTime(row['jam_mulai'])} - ${_formatTime(row['jam_selesai'])}";
 
-                        final int jadwalId =
-                            (jadwal['id'] ?? row['jadwal_id']) as int;
+                        final int jadwalId = row['id'];
 
                         return InkWell(
                           onTap: () {
@@ -224,13 +202,10 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                                   namaMatkul: namaMatkul,
                                   dosen: dosenNama,
                                   ruangan: ruanganNama,
-                                  jadwal: jamGabung,
-                                  attendanceTerakhir:
-                                      "Belum ada", // nanti bisa diisi dari absensi terakhir
-                                  isOffline:
-                                      true, // sementara: nanti bisa diubah tergantung setting
-                                  latitude:
-                                      0.0, // belum ada relasi ke ruang_kelas
+                                  jadwal: jam,
+                                  attendanceTerakhir: "Belum ada",
+                                  isOffline: true,
+                                  latitude: 0.0,
                                   longitude: 0.0,
                                 ),
                               ),
@@ -249,7 +224,6 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // TITLE
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
@@ -270,13 +244,12 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                                     ),
                                   ),
                                 ),
-
                                 const SizedBox(height: 10),
                                 Text("Dosen : $dosenNama"),
                                 const SizedBox(height: 4),
                                 Text("Tempat : $ruanganNama"),
                                 const SizedBox(height: 4),
-                                Text("Jadwal : $jamGabung"),
+                                Text("Jadwal : $jam"),
                               ],
                             ),
                           ),
