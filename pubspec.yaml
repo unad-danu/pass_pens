@@ -41,6 +41,8 @@ dependencies:
   # --- Tanggal & Format Date ---
   intl: ^0.19.0   # <= WAJIB, BIAR DateFormat TIDAK ERROR
 
+  timeago: ^3.7.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

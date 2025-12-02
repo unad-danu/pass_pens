@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../widgets/custom_appbar.dart';
-import 'package:pass_pens/presentation/pages/detail_matkul_dosen_page.dart';
+import '../pages/detail_matkul_dosen_page.dart';
 
 class HomeDosenPage extends StatefulWidget {
   const HomeDosenPage({super.key});
@@ -255,7 +255,7 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                                   nama: mk.nama,
                                   ruangan: mk.ruangan,
                                   jam: mk.jam,
-                                  // kalau nanti DetailMatkulDosenPage butuh jadwalId/hari tinggal tambahkan param
+                                  jadwalId: mk.jadwalId, // FIX WAJIB ADA
                                 ),
                               ),
                             );

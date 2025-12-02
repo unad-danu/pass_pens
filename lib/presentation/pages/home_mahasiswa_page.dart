@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/custom_appbar.dart';
 import '../pages/detail_matkul_mahasiswa_page.dart';
 
@@ -9,59 +10,108 @@ class HomeMahasiswa extends StatefulWidget {
   State<HomeMahasiswa> createState() => _HomeMahasiswaState();
 }
 
-class Matkul {
-  final String nama;
-  final String dosen;
-  final String tempat;
-  final String jadwal;
-
-  Matkul({
-    required this.nama,
-    required this.dosen,
-    required this.tempat,
-    required this.jadwal,
-  });
-}
-
-List<Matkul> mataKuliah = [
-  Matkul(
-    nama: "Praktikum Bahasa Pemrograman",
-    dosen: "Pak A",
-    tempat: "Gedung D201",
-    jadwal: "08:00 - 10:00",
-  ),
-  Matkul(
-    nama: "Bahasa Pemrograman",
-    dosen: "Bu B",
-    tempat: "Gedung D202",
-    jadwal: "10:00 - 12:00",
-  ),
-  Matkul(
-    nama: "Workshop Sistem Analog",
-    dosen: "Pak C",
-    tempat: "Gedung D301",
-    jadwal: "13:00 - 15:00",
-  ),
-];
-
 class _HomeMahasiswaState extends State<HomeMahasiswa> {
+  final supabase = Supabase.instance.client;
+
   String search = '';
   bool ascending = true;
 
+  bool loading = true;
+  String? errorMessage;
+  List<Map<String, dynamic>> dataJadwal = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadJadwalMahasiswa();
+  }
+
+  String _formatTime(dynamic t) {
+    if (t == null) return "-";
+    final s = t.toString();
+    if (s.length >= 5) return s.substring(0, 5);
+    return s;
+  }
+
+  Future<void> loadJadwalMahasiswa() async {
+    try {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+        dataJadwal = [];
+      });
+
+      final authUser = supabase.auth.currentUser;
+      if (authUser == null) {
+        throw "Tidak ada user login";
+      }
+
+      // Cari mahasiswa berdasarkan id_auth
+      final mhsRow = await supabase
+          .from('mahasiswa')
+          .select('id')
+          .eq('id_auth', authUser.id)
+          .maybeSingle();
+
+      if (mhsRow == null) {
+        throw "Data mahasiswa tidak ditemukan";
+      }
+
+      final int mhsId = mhsRow['id'] as int;
+
+      // Ambil mata kuliah yang diambil mahasiswa (ambil_mk) + join ke jadwal, matkul, dosen, ruangan
+      final res = await supabase
+          .from('ambil_mk')
+          .select('''
+            id,
+            jadwal_id,
+            jadwal (
+              id,
+              hari,
+              jam_mulai,
+              jam_selesai,
+              matkul:matkul_id ( id, nama_mk, kode_mk ),
+              dosen:dosen_id ( id, nama ),
+              ruangan:ruangan_id ( id, nama, kode, lokasi )
+            )
+          ''')
+          .eq('mhs_id', mhsId);
+
+      if (!mounted) return;
+
+      setState(() {
+        dataJadwal = List<Map<String, dynamic>>.from(res as List<dynamic>);
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        errorMessage = e.toString();
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Gagal memuat jadwal: $e")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Matkul> filtered = mataKuliah
-        .where((m) => m.nama.toLowerCase().contains(search.toLowerCase()))
-        .toList();
+    List<Map<String, dynamic>> filtered = dataJadwal.where((item) {
+      final jadwal = item['jadwal'];
+      final mk = jadwal?['matkul']?['nama_mk'] ?? '';
+      return mk.toString().toLowerCase().contains(search.toLowerCase());
+    }).toList();
 
-    filtered.sort(
-      (a, b) => ascending ? a.nama.compareTo(b.nama) : b.nama.compareTo(a.nama),
-    );
+    filtered.sort((a, b) {
+      final mkA = a['jadwal']?['matkul']?['nama_mk'] ?? "";
+      final mkB = b['jadwal']?['matkul']?['nama_mk'] ?? "";
+      return ascending ? mkA.compareTo(mkB) : mkB.compareTo(mkA);
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // 🔥 AppBar dari CustomAppBar
       appBar: const CustomAppBar(role: "mhs"),
 
       body: Column(
@@ -84,7 +134,7 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                   child: TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
-                      hintText: "Search",
+                      hintText: "Search matkul",
                       filled: true,
                       fillColor: Colors.white,
                       enabledBorder: OutlineInputBorder(
@@ -99,7 +149,9 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                     onChanged: (v) => setState(() => search = v),
                   ),
                 ),
+
                 const SizedBox(width: 10),
+
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -118,75 +170,120 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
           const SizedBox(height: 10),
 
           Expanded(
-            child: ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final mk = filtered[index];
-
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DetailMatkulMahasiswaPage(
-                          namaMatkul: mk.nama,
-                          dosen: mk.dosen,
-                          ruangan: mk.tempat,
-                          jadwal: mk.jadwal,
-                          attendanceTerakhir: "Belum ada", // sementara dummy
-                          isOffline: true, // contoh: offline = merah
-                          latitude: 0.0,
-                          longitude: 0.0,
-                        ),
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        "Terjadi kesalahan:\n$errorMessage",
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
                     ),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.black45), // ✅ BENAR
-                    ),
+                  )
+                : filtered.isEmpty
+                ? const Center(child: Text("Tidak ada mata kuliah"))
+                : RefreshIndicator(
+                    onRefresh: loadJadwalMahasiswa,
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final row = filtered[index];
+                        final jadwal = row['jadwal'] ?? {};
 
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // TITLE BLACK BAR
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Center(
-                            child: Text(
-                              mk.nama,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                        final matkul = jadwal['matkul'] ?? {};
+                        final dosen = jadwal['dosen'] ?? {};
+                        final ruangan = jadwal['ruangan'] ?? {};
+
+                        final String namaMatkul =
+                            matkul['nama_mk']?.toString() ?? "";
+                        final String dosenNama =
+                            dosen['nama']?.toString() ?? "";
+                        final String ruanganNama =
+                            ruangan['nama']?.toString() ?? "";
+
+                        final String jamMulai = _formatTime(
+                          jadwal['jam_mulai'],
+                        );
+                        final String jamSelesai = _formatTime(
+                          jadwal['jam_selesai'],
+                        );
+                        final String jamGabung = "$jamMulai - $jamSelesai";
+
+                        final int jadwalId =
+                            (jadwal['id'] ?? row['jadwal_id']) as int;
+
+                        return InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailMatkulMahasiswaPage(
+                                  jadwalId: jadwalId,
+                                  namaMatkul: namaMatkul,
+                                  dosen: dosenNama,
+                                  ruangan: ruanganNama,
+                                  jadwal: jamGabung,
+                                  attendanceTerakhir:
+                                      "Belum ada", // nanti bisa diisi dari absensi terakhir
+                                  isOffline:
+                                      true, // sementara: nanti bisa diubah tergantung setting
+                                  latitude:
+                                      0.0, // belum ada relasi ke ruang_kelas
+                                  longitude: 0.0,
+                                ),
                               ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.black45),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // TITLE
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      namaMatkul,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+                                Text("Dosen : $dosenNama"),
+                                const SizedBox(height: 4),
+                                Text("Tempat : $ruanganNama"),
+                                const SizedBox(height: 4),
+                                Text("Jadwal : $jamGabung"),
+                              ],
                             ),
                           ),
-                        ),
-
-                        const SizedBox(height: 10),
-                        Text("Dosen : ${mk.dosen}"),
-                        const SizedBox(height: 4),
-                        Text("Tempat : ${mk.tempat}"),
-                        const SizedBox(height: 4),
-                        Text("Jadwal : ${mk.jadwal}"),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
