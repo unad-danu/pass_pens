@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/custom_appbar.dart';
+import '../../services/absensi_service.dart';
 
 class DetailMatkulDosenPage extends StatefulWidget {
   final int jadwalId;
@@ -36,18 +37,14 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
   Future<void> _loadDetail() async {
     try {
-      // =============================
-      // LOAD HISTORY PRESENSI (TABLE presensi)
-      // =============================
+      // Load history presensi
       final dataHistory = await supabase
           .from('presensi')
           .select('id, created_at')
           .eq('jadwal_id', widget.jadwalId)
           .order('created_at', ascending: false);
 
-      // =============================
-      // LOAD LIST KEHADIRAN MAHASISWA
-      // =============================
+      // Load presensi mahasiswa
       final presensiDetail = await supabase
           .from('presensi_detail')
           .select('status, mahasiswa (nama)')
@@ -81,6 +78,28 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     }
   }
 
+  // ===========================================
+  // FUNGSI BUKA PRESENSI ONLINE / OFFLINE
+  // ===========================================
+  Future<void> _bukaPresensi(String tipe) async {
+    final absensiService = AbsensiService();
+
+    final success = await absensiService.bukaPresensi(widget.jadwalId, tipe);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Presensi $tipe berhasil dibuka!")),
+      );
+      _loadDetail();
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Gagal membuka presensi")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,9 +112,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // =====================================================
-                  // HEADER + BACK BUTTON
-                  // =====================================================
+                  // BACK + TITLE
                   Stack(
                     alignment: Alignment.center,
                     children: [
@@ -121,9 +138,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
                   const SizedBox(height: 20),
 
-                  // =====================================================
-                  // KARTU DETAIL MATKUL
-                  // =====================================================
+                  // CARD DETAIL MATKUL
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -157,27 +172,36 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
                         Text("Jadwal : ${widget.jam}"),
                         const SizedBox(height: 15),
 
-                        // BUTTON ACTION
+                        // =======================
+                        // BUTTON OFFLINE PRESENSI
+                        // =======================
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              _bukaPresensi("Offline");
+                            },
                             child: const Text("Offline Presensi"),
                           ),
                         ),
 
                         const SizedBox(height: 8),
 
+                        // =======================
+                        // BUTTON ONLINE PRESENSI
+                        // =======================
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              _bukaPresensi("Online");
+                            },
                             child: const Text("Online Presensi"),
                           ),
                         ),
@@ -187,9 +211,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
                   const SizedBox(height: 25),
 
-                  // =====================================================
-                  // HISTORY PRESENSI
-                  // =====================================================
+                  // HISTORY
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -245,9 +267,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
                   const SizedBox(height: 25),
 
-                  // =====================================================
                   // PRESENSI MAHASISWA
-                  // =====================================================
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -273,7 +293,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
                         const SizedBox(height: 12),
 
-                        // ================== TIDAK HADIR ==================
+                        // TIDAK HADIR
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -312,7 +332,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
 
                         const SizedBox(height: 12),
 
-                        // ================== HADIR ==================
+                        // HADIR
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 6),

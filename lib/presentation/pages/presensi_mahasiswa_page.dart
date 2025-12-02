@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../../data/services/absensi_service.dart';
 import '../../data/services/face_recognition_service.dart';
 import '../../core/helpers.dart';
-import '../widgets/custom_appbar.dart'; // <-- pastikan path sesuai
+import '../widgets/custom_appbar.dart';
 
 Future<bool> _isFullFaceIsolate(String imagePath) async {
   final service = FaceRecognitionService();
@@ -14,12 +16,18 @@ Future<bool> _isFullFaceIsolate(String imagePath) async {
 }
 
 class PresensiMahasiswaPage extends StatefulWidget {
+  final int mhsId;
+  final int jadwalId;
+  final String tipePresensi; // 'online' atau 'offline'
   final String matkul;
   final double latKelas;
   final double lonKelas;
 
   const PresensiMahasiswaPage({
     super.key,
+    required this.mhsId,
+    required this.jadwalId,
+    required this.tipePresensi,
     required this.matkul,
     required this.latKelas,
     required this.lonKelas,
@@ -31,6 +39,7 @@ class PresensiMahasiswaPage extends StatefulWidget {
 
 class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
   final ImagePicker _picker = ImagePicker();
+  final AbsensiService absensiService = AbsensiService();
 
   File? imageFile;
   bool loading = false;
@@ -74,6 +83,32 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
   }
 
   Future<void> submit() async {
+    // ===============================
+    // MODE ONLINE (langsun presensi)
+    // ===============================
+    if (widget.tipePresensi == "online") {
+      setState(() => loading = true);
+
+      try {
+        await absensiService.presensiOnline(
+          mhsId: widget.mhsId,
+          jadwalId: widget.jadwalId,
+        );
+
+        setState(() => loading = false);
+        Helpers.showSnackBar(context, "Presensi Online Berhasil!");
+        Navigator.pop(context);
+      } catch (e) {
+        setState(() => loading = false);
+        Helpers.showSnackBar(context, "Gagal presensi: $e");
+      }
+
+      return;
+    }
+
+    // ===============================
+    // MODE OFFLINE (foto + lokasi)
+    // ===============================
     if (imageFile == null) {
       Helpers.showSnackBar(context, "Ambil foto terlebih dahulu!");
       return;
@@ -117,8 +152,16 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
         return;
       }
 
+      await absensiService.presensiOffline(
+        mhsId: widget.mhsId,
+        jadwalId: widget.jadwalId,
+        foto: imageFile!,
+        lat: pos.latitude,
+        lng: pos.longitude,
+      );
+
       setState(() => loading = false);
-      Helpers.showSnackBar(context, "Presensi berhasil!");
+      Helpers.showSnackBar(context, "Presensi Offline Berhasil!");
       Navigator.pop(context);
     } catch (e) {
       setState(() => loading = false);
@@ -139,9 +182,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
           children: [
             const SizedBox(height: 12),
 
-            /// ==============================
-            /// TOMBOL BACK + JUDUL DI BODY
-            /// ==============================
             Row(
               children: [
                 InkWell(
@@ -164,9 +204,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
 
             const SizedBox(height: 20),
 
-            // ============================
-            //      KOTAK PRESENSI
-            // ============================
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -182,10 +219,12 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        "Foto Presensi",
-                        style: TextStyle(
+                        widget.tipePresensi == "online"
+                            ? "Presensi Online"
+                            : "Foto Presensi",
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -196,37 +235,40 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
 
                   const SizedBox(height: 20),
 
-                  Container(
-                    height: 250,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black45),
-                      borderRadius: BorderRadius.circular(10),
+                  // TAMPILKAN FOTO HANYA JIKA OFFLINE
+                  if (widget.tipePresensi == "offline") ...[
+                    Container(
+                      height: 250,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black45),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: imageFile == null
+                            ? Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Text("Belum ada foto"),
+                                ),
+                              )
+                            : Image.file(imageFile!, fit: BoxFit.cover),
+                      ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: imageFile == null
-                          ? Container(
-                              color: Colors.grey[300],
-                              child: const Center(
-                                child: Text("Belum ada foto"),
-                              ),
-                            )
-                          : Image.file(imageFile!, fit: BoxFit.cover),
+
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: loading ? null : takePhoto,
+                        child: const Text("Ambil Foto Selfie"),
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : takePhoto,
-                      child: const Text("Ambil Foto Selfie"),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
 
                   SizedBox(
                     width: double.infinity,

@@ -35,6 +35,8 @@ class DetailMatkulMahasiswaPage extends StatefulWidget {
 class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   final supabase = Supabase.instance.client;
 
+  int? mhsId; // ← DISIMPAN DI SINI
+
   bool isLoadingHistory = true;
   String? errorMessage;
   List<Map<String, dynamic>> historyAbsensi = [];
@@ -52,7 +54,7 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
         throw "Tidak ada user login";
       }
 
-      // Cari mahasiswa berdasarkan id_auth
+      // Ambil mhsId dari tabel mahasiswa
       final mhsRow = await supabase
           .from('mahasiswa')
           .select('id')
@@ -63,12 +65,12 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
         throw "Data mahasiswa tidak ditemukan";
       }
 
-      final int mhsId = mhsRow['id'] as int;
+      mhsId = mhsRow['id']; // ← SIMPAN KE STATE
 
       final data = await supabase
           .from('absensi')
           .select('id, dibuat, status, tipe, pertemuan')
-          .eq('mhs_id', mhsId)
+          .eq('mhs_id', mhsId!)
           .eq('jadwal_id', widget.jadwalId)
           .order('dibuat', ascending: false);
 
@@ -94,7 +96,6 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   String _formatDateTime(dynamic v) {
     if (v == null) return "-";
     final s = v.toString();
-    // format: "2025-11-30 10:23:45"
     return s.replaceAll('T', ' ').split(".").first;
   }
 
@@ -182,28 +183,25 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                             : Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () {
-                        if (widget.isOffline) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PresensiMahasiswaPage(
-                                matkul: widget.namaMatkul,
-                                latKelas: widget.latitude,
-                                lonKelas: widget.longitude,
-                              ),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Presensi Online dilakukan! (dummy)",
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: (mhsId == null)
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PresensiMahasiswaPage(
+                                    mhsId: mhsId!,
+                                    jadwalId: widget.jadwalId,
+                                    tipePresensi: widget.isOffline
+                                        ? "offline"
+                                        : "online",
+                                    matkul: widget.namaMatkul,
+                                    latKelas: widget.latitude,
+                                    lonKelas: widget.longitude,
+                                  ),
+                                ),
+                              );
+                            },
                       child: const Text(
                         "Presensi",
                         style: TextStyle(
@@ -219,7 +217,9 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
 
             const SizedBox(height: 25),
 
-            // History Presensi student (berdasarkan absensi)
+            // ====================
+            // History Presensi
+            // ====================
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
