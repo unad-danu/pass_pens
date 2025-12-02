@@ -7,58 +7,76 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBarAdmin(title: "Dashboard Admin"),
+      appBar: const CustomAppBarAdmin(),
 
-      body: GridView.count(
+      body: Padding(
         padding: const EdgeInsets.all(20),
-        crossAxisCount: 2,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        children: [
-          _menuItem(
-            icon: Icons.book,
-            title: "Kelola Matkul",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminKelolaMatkul),
-          ),
-          _menuItem(
-            icon: Icons.people,
-            title: "Kelola Dosen",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminKelolaDosen),
-          ),
-          // _menuItem(
-          // icon: Icons.schedule,
-          // title: "Kelola Jadwal",
-          // onTap: () =>
-          //     Navigator.pushNamed(context, AppRoutes.adminKelolaJadwal),
-          // ),
-          // _menuItem(
-          // icon: Icons.class_,
-          // title: "Kelola Kelas",
-          // onTap: () =>
-          //    Navigator.pushNamed(context, AppRoutes.adminKelolaKelas),
-          //),
-          _menuItem(
-            icon: Icons.meeting_room,
-            title: "Kelola Ruang",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminKelolaRuang),
-          ),
-          _menuItem(
-            icon: Icons.add_task,
-            title: "Assign Matkul",
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoutes.adminAssignMatkul),
-          ),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ========================
+            // JUDUL DI BODY
+            // ========================
+            const Text(
+              "Dashboard Admin",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ========================
+            // GRID MENU
+            // ========================
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 20,
+                children: [
+                  _menuItem(
+                    icon: Icons.book,
+                    title: "Kelola Matkul",
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.adminKelolaMatkul,
+                    ),
+                  ),
+                  _menuItem(
+                    icon: Icons.people,
+                    title: "Kelola Dosen",
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.adminKelolaDosen,
+                    ),
+                  ),
+                  _menuItem(
+                    icon: Icons.meeting_room,
+                    title: "Kelola Ruang",
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.adminKelolaRuang,
+                    ),
+                  ),
+                  _menuItem(
+                    icon: Icons.add_task,
+                    title: "Assign Matkul",
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.adminAssignMatkul,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ====================================================
-  // WIDGET MENU ITEM
-  // ====================================================
   static Widget _menuItem({
     required IconData icon,
     required String title,
@@ -86,12 +104,10 @@ class AdminDashboardPage extends StatelessWidget {
 }
 
 // ====================================================
-// CUSTOM APP BAR ADMIN (GAYA MAHASISWA TANPA LOGO)
+// CUSTOM APP BAR ADMIN TANPA TITLE
 // ====================================================
 class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
-  final String? title;
-
-  const CustomAppBarAdmin({super.key, this.title});
+  const CustomAppBarAdmin({super.key});
 
   static const double _bottomLineHeight = 10;
 
@@ -106,8 +122,8 @@ class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
 
       title: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
+        children: const [
+          Text(
             "PASS",
             style: TextStyle(
               color: Colors.white,
@@ -115,26 +131,13 @@ class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const Text(
+          Text(
             "PENS Attendance Smart System",
             style: TextStyle(color: Colors.white, fontSize: 12),
           ),
-          if (title != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              title!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ],
       ),
 
-      // TOMBOL LOGOUT
       actions: [
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),

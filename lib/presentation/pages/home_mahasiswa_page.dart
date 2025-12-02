@@ -32,62 +32,90 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
     return s.length >= 5 ? s.substring(0, 5) : s;
   }
 
-  Future<List<dynamic>> loadJadwalMahasiswa() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
+  Future<void> loadJadwalMahasiswa() async {
+    try {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+      });
 
-    if (user == null) {
-      throw Exception("User tidak ditemukan");
-    }
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
 
-    // 1. Ambil data mahasiswa
-    final mhsRes = await supabase
-        .from('mahasiswa')
-        .select('id, prodi_id, kelas')
-        .eq('id_auth', user.id)
-        .maybeSingle();
+      if (user == null) {
+        throw Exception("User tidak ditemukan");
+      }
 
-    if (mhsRes == null) {
-      throw Exception("Data mahasiswa tidak ditemukan");
-    }
+      // 1. Ambil data mahasiswa
+      final mhsRes = await supabase
+          .from('mahasiswa')
+          .select('id, prodi_id, kelas, semester')
+          .eq('id_auth', user.id)
+          .maybeSingle();
 
-    final int prodiId = mhsRes['prodi_id'];
-    final String kelasMahasiswa = mhsRes['kelas'];
+      if (mhsRes == null) {
+        throw Exception("Data mahasiswa tidak ditemukan");
+      }
 
-    // 2. Ambil jadwal sesuai prodi + kelas
-    final jadwalRes = await supabase
-        .from('jadwal')
-        .select('''
+      final int prodiId = mhsRes['prodi_id'];
+      final String kelasMahasiswa = mhsRes['kelas'];
+      final int semesterMahasiswa = mhsRes['semester'];
+
+      // 2. Ambil jadwal berdasarkan prodi + kelas + semester matkul
+      final jadwalRes = await supabase
+          .from('jadwal')
+          .select('''
+      id,
+      hari,
+      jam_mulai,
+      jam_selesai,
+      kelas_mk (
         id,
-        hari,
-        jam_mulai,
-        jam_selesai,
-        kelas_mk (
-          id,
-          nama_kelas
-        ),
-        matkul (
-          id,
-          nama_mk,
-          kode_mk,
-          prodi_id
-        ),
-        dosen (
-          id,
-          nama
-        ),
-        ruangan (
-          id,
-          nama
-        )
-      ''')
-        .eq('matkul.prodi_id', prodiId) // filter prodi
-        .eq('kelas_mk.nama_kelas', kelasMahasiswa) // filter kelas
-        .order('hari')
-        .order('jam_mulai');
+        nama_kelas
+      ),
+      matkul (
+        id,
+        nama_mk,
+        kode_mk,
+        prodi_id,
+        semester
+      ),
+      dosen (
+        id,
+        nama
+      ),
+      ruangan (
+        id,
+        nama
+      )
+    ''')
+          .eq('matkul.prodi_id', prodiId)
+          .eq('kelas_mk.nama_kelas', kelasMahasiswa)
+          .eq('matkul.semester', semesterMahasiswa) // ★ FILTER UTAMA
+          .order('hari')
+          .order('jam_mulai');
 
-    // Supabase V2: hasilnya langsung List<dynamic>
-    return jadwalRes;
+      // SUPABASE sudah mengembalikan List<dynamic>
+      // Kita simpan langsung ke dataJadwal
+      final List<dynamic> raw = jadwalRes;
+
+      final filtered = raw.where((row) {
+        final mk = row['matkul'];
+        return mk != null &&
+            mk['semester'] == semesterMahasiswa &&
+            mk['prodi_id'] == prodiId;
+      }).toList();
+
+      setState(() {
+        dataJadwal = List<Map<String, dynamic>>.from(filtered);
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        loading = false;
+      });
+    }
   }
 
   @override
@@ -99,11 +127,34 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
     }).toList();
 
     // Sorting
+    final dayOrder = {
+      "Senin": 1,
+      "Selasa": 2,
+      "Rabu": 3,
+      "Kamis": 4,
+      "Jumat": 5,
+      "Sabtu": 6,
+      "Minggu": 7,
+    };
+
     filtered.sort((a, b) {
-      final mkA = a['matkul']?['nama_mk'] ?? "";
-      final mkB = b['matkul']?['nama_mk'] ?? "";
-      return ascending ? mkA.compareTo(mkB) : mkB.compareTo(mkA);
+      final hariA = a['hari'] ?? "";
+      final hariB = b['hari'] ?? "";
+
+      final orderA = dayOrder[hariA] ?? 999;
+      final orderB = dayOrder[hariB] ?? 999;
+
+      return ascending ? orderA.compareTo(orderB) : orderB.compareTo(orderA);
     });
+
+    // === HAPUS DUPLIKAT NAMA MATKUL ===
+    final seen = <String>{};
+    filtered = filtered.where((item) {
+      final mkName = item['matkul']?['nama_mk'] ?? "";
+      if (seen.contains(mkName)) return false;
+      seen.add(mkName);
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -187,6 +238,8 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                         final ruanganNama =
                             ruangan['nama'] ?? "Tidak ada ruang";
 
+                        final hari = row['hari'] ?? "-"; // ★ Tambahan
+
                         final jam =
                             "${_formatTime(row['jam_mulai'])} - ${_formatTime(row['jam_selesai'])}";
 
@@ -241,10 +294,12 @@ class _HomeMahasiswaState extends State<HomeMahasiswa> {
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 10),
+                                Text("Hari : $hari"), // ★ Tambahan
+                                const SizedBox(height: 4),
                                 Text("Dosen : $dosenNama"),
                                 const SizedBox(height: 4),
                                 Text("Tempat : $ruanganNama"),
