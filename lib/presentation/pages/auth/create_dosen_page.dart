@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_page.dart';
 import '../../../core/supabase_config.dart';
 import '../../widgets/custom_appbar.dart';
@@ -57,7 +56,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
     setState(() => isLoading = true);
 
     try {
-      // 1. BUAT AKUN DI SUPABASE AUTH
       final authRes = await client.auth.signUp(email: email, password: pass);
 
       if (authRes.user == null) {
@@ -66,11 +64,10 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
 
       final authUid = authRes.user!.id;
 
-      // 2. INSERT KE TABEL USERS
       final insertedUser = await client
           .from('users')
           .insert({
-            'id_auth': authUid, // <-- tambahan penting
+            'id_auth': authUid,
             'nama': widget.biodata['nama'],
             'email': email,
             'role': 'dsn',
@@ -82,7 +79,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
 
       final userId = insertedUser['id'];
 
-      // (sisanya tetap sama)
       final insertedDosen = await client
           .from('dosen')
           .insert({
@@ -151,9 +147,6 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
 
-      // ==========================
-      //     CUSTOM APP BAR
-      // ==========================
       appBar: const CustomAppBar(role: "guest", showBack: false),
 
       body: Column(
@@ -164,17 +157,11 @@ class _CreateDosenPageState extends State<CreateDosenPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ==========================
-                  //   TOMBOL BACK DI BODY
-                  // ==========================
                   Row(
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black, // ← ikon hitam
-                        ),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
                       ),
                       const SizedBox(width: 8),
                       const Expanded(

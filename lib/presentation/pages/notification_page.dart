@@ -115,10 +115,8 @@ class _NotificationPageState extends State<NotificationPage> {
                         // refresh list
                         setState(() => futureNotif = loadNotifications());
 
-                        // Route
+                        // Route: Mahasiswa
                         if (role == "mhs") {
-                          if (!mounted) return;
-
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -135,17 +133,17 @@ class _NotificationPageState extends State<NotificationPage> {
                               ),
                             ),
                           );
-                        } else {
-                          if (!mounted) return;
-
+                        }
+                        // Route: Dosen
+                        else {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DetailMatkulDosenPage(
-                                nama: n["title"] ?? "",
-                                ruangan: "",
-                                jam: "",
                                 jadwalId: jadwalId,
+                                namaMatkul: n["title"] ?? "",
+                                jamMulai: n["jam_mulai"] ?? "",
+                                jamSelesai: n["jam_selesai"] ?? "",
                               ),
                             ),
                           );

@@ -19,9 +19,9 @@ class AdminKelolaKelasPage extends StatelessWidget {
             child: ListTile(
               title: Text('Kelas ${String.fromCharCode(65 + i)}'),
               subtitle: const Text('Jumlah Mahasiswa: 30'),
-              trailing: Row(
+              trailing: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.edit, color: Colors.orange),
                   SizedBox(width: 10),
                   Icon(Icons.delete, color: Colors.red),

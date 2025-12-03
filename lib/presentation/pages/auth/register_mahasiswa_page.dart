@@ -215,7 +215,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
 
       appBar: const CustomAppBar(role: "mhs"),
@@ -276,7 +276,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
                     : DropdownButtonFormField<String>(
                         isExpanded: true,
                         decoration: deco("Prodi", errProdi, Icons.school),
-                        value: selectedProdi,
+                        initialValue: selectedProdi,
                         items: listProdi.map((p) {
                           return DropdownMenuItem(
                             value: p,
@@ -298,7 +298,7 @@ class _RegisterMahasiswaState extends State<RegisterMahasiswa>
                     errAngkatan,
                     Icons.calendar_month,
                   ),
-                  value: selectedAngkatan,
+                  initialValue: selectedAngkatan,
                   items: listAngkatan.map((y) {
                     return DropdownMenuItem(value: y, child: Text(y));
                   }).toList(),

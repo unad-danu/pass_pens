@@ -19,9 +19,9 @@ class AdminKelolaJadwalPage extends StatelessWidget {
             child: ListTile(
               title: Text('Jadwal ${i + 1}'),
               subtitle: const Text('Senin • 07.00 - 09.00'),
-              trailing: Row(
+              trailing: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.edit, color: Colors.orange),
                   SizedBox(width: 10),
                   Icon(Icons.delete, color: Colors.red),

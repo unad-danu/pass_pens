@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF0B5E86)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0B5E86)),
       ),
 
       // Routing

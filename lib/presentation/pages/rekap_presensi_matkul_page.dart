@@ -88,9 +88,9 @@ class RekapPresensiMatkulPage extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   // === KELAS ===
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.class_, color: Colors.white, size: 20),
                       SizedBox(width: 8),
                       Text(
@@ -107,9 +107,9 @@ class RekapPresensiMatkulPage extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   // === JUMLAH MAHASISWA ===
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.people_outline, color: Colors.white, size: 20),
                       SizedBox(width: 8),
                       Text(

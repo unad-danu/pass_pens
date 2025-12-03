@@ -59,8 +59,6 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  // ================= LOAD DATA AWAL =================
-
   Future<void> _loadInitialData() async {
     try {
       final prodiRes = await supabase.from('prodi').select('id,nama');
@@ -128,8 +126,6 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
       setState(() => isLoadingDosen = false);
     }
   }
-
-  // =============== KELAS MK (A-E) ===============
 
   /// Ambil atau buat kelas_mk untuk mk_id & nama_kelas tertentu
   Future<int> _getOrCreateKelas(int mkId, String kelas) async {
@@ -212,8 +208,6 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
     );
   }
 
-  // =============== SIMPAN JADWAL ===============
-
   Future<void> _simpan() async {
     if (selectedProdiId == null ||
         selectedMatkulId == null ||
@@ -280,8 +274,6 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
     }
   }
 
-  // =============== UI ===============
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -300,7 +292,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       decoration: const InputDecoration(
                         labelText: "Pilih Prodi",
                       ),
-                      value: selectedProdiId,
+                      initialValue: selectedProdiId,
                       items: prodiList
                           .map(
                             (p) => DropdownMenuItem<int>(
@@ -334,7 +326,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                             decoration: const InputDecoration(
                               labelText: "Pilih Matkul",
                             ),
-                            value: selectedMatkulId,
+                            initialValue: selectedMatkulId,
                             items: matkulList.map((m) {
                               final semester = m['semester'] ?? '-';
                               return DropdownMenuItem<int>(
@@ -397,7 +389,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                             decoration: const InputDecoration(
                               labelText: "Pilih Dosen",
                             ),
-                            value: selectedDosenId,
+                            initialValue: selectedDosenId,
                             items: dosenList
                                 .map(
                                   (d) => DropdownMenuItem<int>(
@@ -418,7 +410,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       decoration: const InputDecoration(
                         labelText: "Pilih Ruangan",
                       ),
-                      value: selectedRuanganId,
+                      initialValue: selectedRuanganId,
                       items: ruanganList
                           .map(
                             (r) => DropdownMenuItem<int>(
@@ -438,7 +430,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       decoration: const InputDecoration(
                         labelText: "Pilih Hari",
                       ),
-                      value: selectedHari,
+                      initialValue: selectedHari,
                       items: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]
                           .map(
                             (h) => DropdownMenuItem<String>(
@@ -458,7 +450,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       decoration: const InputDecoration(
                         labelText: "Slot Mulai",
                       ),
-                      value: startSlot,
+                      initialValue: startSlot,
                       items: List.generate(
                         slotWaktu.length,
                         (i) => DropdownMenuItem<int>(
@@ -477,7 +469,7 @@ class _AdminAssignMatkulPageState extends State<AdminAssignMatkulPage> {
                       decoration: const InputDecoration(
                         labelText: "Slot Akhir",
                       ),
-                      value: endSlot,
+                      initialValue: endSlot,
                       items: List.generate(
                         slotWaktu.length,
                         (i) => DropdownMenuItem<int>(

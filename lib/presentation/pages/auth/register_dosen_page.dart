@@ -102,7 +102,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     super.dispose();
   }
 
-  // ================= VALIDASI ==================
+  // VALIDASI
 
   // regex generik untuk Gmail: local-part + @gmail.com
   final _gmailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$');
@@ -127,8 +127,9 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
   String? validatePhone(String v) {
     if (v.trim().isEmpty) return "Nomor telepon wajib diisi";
-    if (!RegExp(r'^[0-9]+$').hasMatch(v.replaceAll('-', '')))
+    if (!RegExp(r'^[0-9]+$').hasMatch(v.replaceAll('-', ''))) {
       return "Nomor telepon hanya angka";
+    }
     if (v.replaceAll('-', '').length < 8) return "Nomor telepon terlalu pendek";
     return null;
   }
@@ -136,8 +137,9 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
   String? validateEmail(String v) {
     final trimmed = v.trim();
     if (trimmed.isEmpty) return "E-mail wajib diisi";
-    if (!_gmailRegex.hasMatch(trimmed))
+    if (!_gmailRegex.hasMatch(trimmed)) {
       return "Gunakan E-mail Gmail yang valid (contoh: users@gmail.com)";
+    }
     return null;
   }
 
@@ -179,7 +181,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
             "nama": _namaCtrl.text.trim(),
             "nip": _nipCtrl.text.trim(),
             "phone": _phoneCtrl.text.trim(),
-            // simpan recovery email dalam lowercase agar konsisten
             "email_recovery": emailRaw.toLowerCase(),
             "prodi": selectedProdi,
           },
@@ -192,7 +193,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
     return InputDecoration(
       labelText: label,
       errorText: err,
-      // agar errorText bisa wrap / turun ke baris bawah
       errorMaxLines: 3,
       errorStyle: const TextStyle(fontSize: 13, height: 1.2, color: Colors.red),
       floatingLabelStyle: const TextStyle(
@@ -254,7 +254,7 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                                   onPressed: () => Navigator.pop(context),
                                   icon: const Icon(
                                     Icons.arrow_back,
-                                    color: Colors.black, // ← warna hitam
+                                    color: Colors.black,
                                   ),
                                   label: const Text(""),
                                 ),
@@ -271,7 +271,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
                                 const SizedBox(height: 22),
 
-                                // ============ NAMA ============
                                 AnimatedBuilder(
                                   animation: _shakeNamaController,
                                   builder: (context, child) {
@@ -297,7 +296,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
                                 const SizedBox(height: 20),
 
-                                // ============ NIP ============
                                 AnimatedBuilder(
                                   animation: _shakeNipController,
                                   builder: (context, child) {
@@ -321,7 +319,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
                                 const SizedBox(height: 20),
 
-                                // ============ PRODI ============
                                 AnimatedBuilder(
                                   animation: _shakeProdiController,
                                   builder: (context, child) {
@@ -409,7 +406,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
                                 const SizedBox(height: 20),
 
-                                // ============ PHONE ============
                                 AnimatedBuilder(
                                   animation: _shakePhoneController,
                                   builder: (context, child) {
@@ -438,7 +434,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
 
                                 const SizedBox(height: 20),
 
-                                // ============ EMAIL ============
                                 AnimatedBuilder(
                                   animation: _shakeEmailController,
                                   builder: (context, child) {
@@ -488,7 +483,6 @@ class _RegisterDosenPageState extends State<RegisterDosenPage>
                         ),
                       ),
 
-                      // FOOTER
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         width: double.infinity,

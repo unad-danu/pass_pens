@@ -162,24 +162,32 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            data['nama'] ?? "-",
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+
+                      Expanded(
+                        // <-- TAMBAHKAN INI
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data['nama'] ?? "-",
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2, // <-- CEGAH OVERFLOW
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Text(
-                            data['email'] ?? "-",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
+                            Text(
+                              data['email'] ?? "-",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1, // <-- EMAIL PANJANG JUGA AMAN
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

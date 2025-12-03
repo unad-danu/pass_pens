@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase_config.dart';
 import 'login_page.dart';
 import '../../widgets/custom_appbar.dart';
@@ -45,7 +44,7 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
     return email.endsWith("@$domain.student.pens.ac.id");
   }
 
-  // === VALIDATOR PASSWORD ===
+  // VALIDATOR PASSWORD
   bool isValidPassword(String pass) {
     final hasUppercase = pass.contains(RegExp(r'[A-Z]'));
     final hasNumber = pass.contains(RegExp(r'[0-9]'));
@@ -101,16 +100,14 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
     setState(() => isLoading = true);
 
     try {
-      // 1. SIGN UP AUTH (DAPAT UUID)
       final authRes = await supabase.auth.signUp(email: email, password: pass);
 
       if (authRes.user == null) {
         throw "Gagal membuat akun Supabase Auth";
       }
 
-      final String authUid = authRes.user!.id; // UUID
+      final String authUid = authRes.user!.id;
 
-      // 2. INSERT KE TABEL USERS (ID AUTO INCREMENT)
       final insertedUser = await supabase
           .from('users')
           .insert({
@@ -124,9 +121,8 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
           .select()
           .single();
 
-      final int userId = insertedUser['id']; // INTEGER!!
+      final int userId = insertedUser['id'];
 
-      // 3. GET / INSERT PRODI
       final prodiName = widget.biodata['prodi'];
       int? prodiId = widget.biodata['prodi_id'];
 
@@ -149,7 +145,6 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
         }
       }
 
-      // 4. INSERT KE MAHASISWA (PAKAI userId INTEGER)
       await supabase
           .from('mahasiswa')
           .insert({
@@ -201,9 +196,6 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
 
-      // ==========================
-      //     CUSTOM APP BAR
-      // ==========================
       appBar: const CustomAppBar(role: "mhs"),
 
       body: Column(
@@ -214,17 +206,11 @@ class _CreateMahasiswaPageState extends State<CreateMahasiswaPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ==========================
-                  //      TOMBOL BACK DI BODY
-                  // ==========================
                   Row(
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black, // ← ikon hitam
-                        ),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
                       ),
                       const SizedBox(width: 8),
                       const Expanded(

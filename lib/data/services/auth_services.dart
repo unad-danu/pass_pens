@@ -103,9 +103,7 @@ class AuthService {
           id: userRes["id"],
           email: userRes["email"],
           role: role,
-          mahasiswa: mhs != null
-              ? MahasiswaModel.fromMap(mhs as Map<String, dynamic>)
-              : null,
+          mahasiswa: mhs != null ? MahasiswaModel.fromMap(mhs) : null,
           dosen: null,
         );
       }
@@ -122,9 +120,7 @@ class AuthService {
           email: userRes["email"],
           role: role,
           mahasiswa: null,
-          dosen: dsn != null
-              ? DosenModel.fromMap(dsn as Map<String, dynamic>)
-              : null,
+          dosen: dsn != null ? DosenModel.fromMap(dsn) : null,
         );
       }
 

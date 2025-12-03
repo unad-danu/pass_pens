@@ -26,7 +26,7 @@ class DetailRekapMatkulPage extends StatelessWidget {
     double persen = belumDimulai ? 0 : (totalHadir / absensi.length);
 
     return Scaffold(
-      appBar: CustomAppBar(role: "mhs"),
+      appBar: const CustomAppBar(role: "mhs"),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [

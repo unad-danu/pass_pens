@@ -38,14 +38,14 @@ class _MainNavigationState extends State<MainNavigation> {
     if (widget.role == "mhs" || widget.role == "mahasiswa") {
       pages = [
         const HomeMahasiswa(),
-        NotificationPage(role: "mhs"),
+        const NotificationPage(role: "mhs"),
         RekapMatkulMahasiswaPage(), // FIX
         ProfilePage(role: widget.role),
       ];
     } else {
       pages = [
         const HomeDosenPage(),
-        NotificationPage(role: "dsn"),
+        const NotificationPage(role: "dsn"),
         const RekapMatkulDosenPage(), // FIX
         ProfilePage(role: widget.role),
       ];

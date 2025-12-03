@@ -10,9 +10,11 @@ class FaceRecognitionService {
 
   Future<bool> isFullFace(File imageFile) async {
     final faceDetector = FaceDetector(options: options);
-    final inputImage = InputImage.fromFile(imageFile);
 
     try {
+      // Load image with correct orientation
+      final inputImage = InputImage.fromFilePath(imageFile.path);
+
       final faces = await faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) return false;
@@ -20,20 +22,21 @@ class FaceRecognitionService {
       final face = faces.first;
       final box = face.boundingBox;
 
-      // Cek ukuran wajah minimal (lebih realistis)
-      if (box.width < 80 || box.height < 80) {
-        return false;
-      }
+      // Flexible bounding box
+      if (box.width < 40 || box.height < 40) return false;
 
-      // Cek kemiringan kepala
+      // Check tilt (Y)
       final angleY = face.headEulerAngleY ?? 0;
-      if (angleY.abs() > 25) return false;
+      if (angleY.abs() > 40) return false;
+
+      // Check nodding (X)
+      final angleX = face.headEulerAngleX ?? 0;
+      if (angleX.abs() > 35) return false;
 
       return true;
     } catch (e) {
       return false;
     } finally {
-      // ini yang benar
       faceDetector.close();
     }
   }

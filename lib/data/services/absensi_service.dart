@@ -5,7 +5,7 @@ class AbsensiService {
   final supabase = Supabase.instance.client;
 
   // ===============================
-  // PRESENSI ONLINE
+  // PRESENSI ONLINE (MAHASISWA)
   // ===============================
   Future<void> presensiOnline({
     required int mhsId,
@@ -26,7 +26,7 @@ class AbsensiService {
   }
 
   // ===============================
-  // PRESENSI OFFLINE (foto + lokasi)
+  // PRESENSI OFFLINE (MAHASISWA)
   // ===============================
   Future<void> presensiOffline({
     required int mhsId,
@@ -37,19 +37,15 @@ class AbsensiService {
   }) async {
     final pertemuan = await _getPertemuanAktif(jadwalId);
 
-    // Upload foto ke Supabase Storage
     final filePath =
         "absensi/$jadwalId/$mhsId-${DateTime.now().millisecondsSinceEpoch}.jpg";
 
-    final uploaded = await supabase.storage
-        .from("foto-presensi")
-        .upload(filePath, foto);
+    await supabase.storage.from("foto-presensi").upload(filePath, foto);
 
     final fotoUrl = supabase.storage
         .from("foto-presensi")
         .getPublicUrl(filePath);
 
-    // Insert ke tabel absensi
     await supabase.from("absensi").insert({
       "mhs_id": mhsId,
       "jadwal_id": jadwalId,
@@ -63,29 +59,89 @@ class AbsensiService {
   }
 
   // ===============================
-  // BUKA PRESENSI (Online / Offline)
+  // BUKA PRESENSI (DOSEN)
   // ===============================
-  Future<bool> bukaPresensi(int jadwalId, String tipe) async {
+  Future<bool> bukaPresensi({
+    required int jadwalId,
+    required String tipe,
+  }) async {
     try {
-      final pertemuan = await _getPertemuanAktif(jadwalId);
+      // 1. Ambil informasi jadwal yg ingin dibuka
+      final jadwal = await supabase
+          .from("jadwal")
+          .select("hari, jam_mulai, jam_selesai, kelas, semester, dosen_id")
+          .eq("id", jadwalId)
+          .maybeSingle();
 
-      // Insert into 'presensi' table to open attendance
-      await supabase.from('presensi').insert({
-        'jadwal_id': jadwalId,
-        'tipe': tipe.toLowerCase(), // "online" or "offline"
-        'pertemuan': pertemuan,
-        // Add other fields if needed, e.g., created_at will be auto-handled
-      });
+      if (jadwal == null) return false;
 
-      return true;
+      final hari = jadwal["hari"];
+      final jamMulai = jadwal["jam_mulai"];
+      final jamSelesai = jadwal["jam_selesai"];
+      final kelas = jadwal["kelas"];
+      final semester = jadwal["semester"];
+      final dosenId = jadwal["dosen_id"];
+
+      // ===============================
+      // CEK 1: DOSEN SEDANG MENGAJAR?
+      // ===============================
+      final cekJadwalDosen = await supabase
+          .from("jadwal")
+          .select("id")
+          .eq("dosen_id", dosenId)
+          .eq("hari", hari)
+          .or("jam_mulai < '$jamSelesai' AND jam_selesai > '$jamMulai'")
+          .limit(1);
+
+      final dosenSedangMengajar = cekJadwalDosen.isNotEmpty;
+
+      // Jika dosen sedang mengajar → BOLEH langsung buka
+      if (dosenSedangMengajar) {
+        return await _insertPresensi(jadwalId, tipe);
+      }
+
+      // ======================================
+      // CEK 2: MAHASISWA PUNYA JADWAL LAIN?
+      // ======================================
+      final cekBentrokMhs = await supabase
+          .from("jadwal")
+          .select("id")
+          .eq("kelas", kelas)
+          .eq("semester", semester)
+          .eq("hari", hari)
+          .neq("id", jadwalId)
+          .or("jam_mulai < '$jamSelesai' AND jam_selesai > '$jamMulai'")
+          .limit(1);
+
+      if (cekBentrokMhs.isNotEmpty) {
+        return false; // mahasiswa ada jadwal lain → tidak boleh buka
+      }
+
+      // Tidak bentrok → boleh buka
+      return await _insertPresensi(jadwalId, tipe);
     } catch (e) {
-      // Handle error, perhaps log it
       return false;
     }
   }
 
+  // Insert presensi
+  Future<bool> _insertPresensi(int jadwalId, String tipe) async {
+    final now = DateTime.now();
+    final autoClose = now.add(const Duration(hours: 1));
+
+    await supabase.from("presensi").insert({
+      "jadwal_id": jadwalId,
+      "tipe": tipe,
+      "pertemuan": await _getPertemuanAktif(jadwalId),
+      "opened_at": now.toIso8601String(),
+      "auto_close_at": autoClose.toIso8601String(),
+    });
+
+    return true;
+  }
+
   // ===============================
-  // Ambil pertemuan aktif
+  // PERINGKATAN
   // ===============================
   Future<int> _getPertemuanAktif(int jadwalId) async {
     final data = await supabase

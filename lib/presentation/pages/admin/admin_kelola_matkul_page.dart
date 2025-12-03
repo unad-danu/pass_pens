@@ -120,7 +120,7 @@ class _AdminKelolaMatkulPageState extends State<AdminKelolaMatkulPage> {
         return StatefulBuilder(
           builder: (ctx, setStateDialog) {
             // fungsi untuk buka bottom sheet pilih prodi
-            Future<void> _openProdiPicker() async {
+            Future<void> openProdiPicker() async {
               // copy sementara
               List<int> tempSelected = List<int>.from(selectedProdiIds);
 
@@ -223,7 +223,7 @@ class _AdminKelolaMatkulPageState extends State<AdminKelolaMatkulPage> {
             }
 
             // helper nama prodi terpilih
-            List<String> _selectedProdiNames() {
+            List<String> selectedProdiNames() {
               final names = <String>[];
               for (final pid in selectedProdiIds) {
                 final match = prodiList.cast<Map<String, dynamic>>().where(
@@ -273,7 +273,7 @@ class _AdminKelolaMatkulPageState extends State<AdminKelolaMatkulPage> {
 
                     // Tombol / field klik "Pilih..."
                     InkWell(
-                      onTap: _openProdiPicker,
+                      onTap: openProdiPicker,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -303,7 +303,7 @@ class _AdminKelolaMatkulPageState extends State<AdminKelolaMatkulPage> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 4,
-                        children: _selectedProdiNames().map((namaProdi) {
+                        children: selectedProdiNames().map((namaProdi) {
                           final pid =
                               prodiList.cast<Map<String, dynamic>>().firstWhere(
                                     (p) => p['nama'] == namaProdi,

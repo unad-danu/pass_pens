@@ -3,6 +3,8 @@ import '../widgets/custom_appbar.dart';
 import 'rekap_detail_matkul_mahasiswa_page.dart';
 
 class RekapMatkulMahasiswaPage extends StatefulWidget {
+  const RekapMatkulMahasiswaPage({super.key});
+
   @override
   _RekapMatkulMahasiswaPageState createState() =>
       _RekapMatkulMahasiswaPageState();
@@ -87,7 +89,7 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
           // LIST MATKUL
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final mk = filtered[index];
@@ -96,10 +98,10 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
                   child: ListTile(
                     title: Text(
                       mk["nama"],
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text("${mk["pertemuan"]} Pertemuan"),
-                    trailing: Icon(Icons.chevron_right),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.push(
                         context,

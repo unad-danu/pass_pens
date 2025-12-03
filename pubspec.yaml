@@ -20,11 +20,14 @@ dependencies:
   provider: ^6.1.2
 
   # --- Kamera / Galeri ---
-  image_picker: ^1.1.1         
+  image_picker: ^1.1.1
+
+  # --- FIX ORIENTASI FOTO (tambah ini) ---
+  image: ^4.2.0
 
   # --- GPS Lokasi ---
-  geolocator: ^14.0.2          
-  permission_handler: ^11.0.0  
+  geolocator: ^14.0.2
+  permission_handler: ^11.0.0
 
   # --- ML Kit Face Detection ---
   google_mlkit_face_detection: ^0.13.1
@@ -39,7 +42,7 @@ dependencies:
   animate_do: ^3.3.4
 
   # --- Tanggal & Format Date ---
-  intl: ^0.19.0   # <= WAJIB, BIAR DateFormat TIDAK ERROR
+  intl: ^0.19.0
 
   timeago: ^3.7.1
 
@@ -47,8 +50,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # versi stabil (6.0 menyebabkan warning banyak)
-  flutter_lints: ^3.0.1  
+  flutter_lints: ^3.0.1
 
 flutter:
   uses-material-design: true

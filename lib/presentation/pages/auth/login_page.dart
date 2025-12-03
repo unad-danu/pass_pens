@@ -72,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!email.contains("@")) {
       // Jika mahasiswa (prefix mulai dari singkatan prodi)
       if (mahasiswaPrefixes.any((p) => prefix.startsWith(p))) {
-        email = "$prefix@${prefix}.student.pens.ac.id";
+        email = "$prefix@$prefix.student.pens.ac.id";
       }
       // Jika dosen
       else {
@@ -96,14 +96,14 @@ class _LoginPageState extends State<LoginPage> {
       final data = await Supabase.instance.client
           .from('users')
           .select('role')
-          .eq('id_auth', user.id) // gunakan UUID
+          .eq('id_auth', user.id)
           .maybeSingle();
 
       if (data == null) throw Exception("Role user tidak ditemukan!");
 
       final role = data['role'];
 
-      // ============= MASUK KE MAIN NAVIGATION / ADMIN =============
+      // MASUK KE MAIN NAVIGATION / ADMIN
       if (role == "adm") {
         Navigator.pushReplacement(
           context,
@@ -112,12 +112,16 @@ class _LoginPageState extends State<LoginPage> {
       } else if (role == "mhs" || role == "mahasiswa") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => MainNavigation(role: "mahasiswa")),
+          MaterialPageRoute(
+            builder: (_) => const MainNavigation(role: "mahasiswa"),
+          ),
         );
       } else if (role == "dsn" || role == "dosen") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => MainNavigation(role: "dosen")),
+          MaterialPageRoute(
+            builder: (_) => const MainNavigation(role: "dosen"),
+          ),
         );
       } else {
         showAlert("Error", "Role tidak dikenali: $role");
@@ -150,7 +154,6 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ============================ BODY ============================
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -281,7 +284,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // ============================ FOOTER ============================
             Container(
               padding: const EdgeInsets.symmetric(vertical: 18),
               width: double.infinity,

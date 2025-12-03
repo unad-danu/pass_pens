@@ -14,9 +14,6 @@ class AdminDashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ========================
-            // JUDUL DI BODY
-            // ========================
             const Text(
               "Dashboard Admin",
               style: TextStyle(
@@ -27,9 +24,6 @@ class AdminDashboardPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // ========================
-            // GRID MENU
-            // ========================
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -103,9 +97,6 @@ class AdminDashboardPage extends StatelessWidget {
   }
 }
 
-// ====================================================
-// CUSTOM APP BAR ADMIN TANPA TITLE
-// ====================================================
 class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBarAdmin({super.key});
 
@@ -120,9 +111,9 @@ class CustomAppBarAdmin extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 95,
       centerTitle: true,
 
-      title: Column(
+      title: const Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Text(
             "PASS",
             style: TextStyle(

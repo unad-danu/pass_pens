@@ -36,7 +36,7 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   final supabase = Supabase.instance.client;
 
   int? mhsId; // ← DISIMPAN DI SINI
-
+  bool isOpen = false;
   bool isLoadingHistory = true;
   String? errorMessage;
   List<Map<String, dynamic>> historyAbsensi = [];
@@ -44,7 +44,48 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   @override
   void initState() {
     super.initState();
+    _updateOpenStatus();
     _loadHistory();
+  }
+
+  Future<void> _updateOpenStatus() async {
+    // Set last opened & is_open = true
+    await supabase
+        .from('jadwal')
+        .update({
+          'is_open': true,
+          'last_opened_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', widget.jadwalId);
+
+    // Ambil status terbaru
+    final row = await supabase
+        .from('jadwal')
+        .select('jam_selesai, is_open')
+        .eq('id', widget.jadwalId)
+        .maybeSingle();
+
+    if (row != null) {
+      final sekarang = TimeOfDay.now();
+      final selesai = TimeOfDay(
+        hour: int.parse(row['jam_selesai'].split(':')[0]),
+        minute: int.parse(row['jam_selesai'].split(':')[1]),
+      );
+
+      bool lewat =
+          sekarang.hour > selesai.hour ||
+          (sekarang.hour == selesai.hour && sekarang.minute > selesai.minute);
+
+      if (lewat) {
+        await supabase
+            .from('jadwal')
+            .update({'is_open': false})
+            .eq('id', widget.jadwalId);
+        isOpen = false;
+      } else {
+        isOpen = true;
+      }
+    }
   }
 
   Future<void> _loadHistory() async {
@@ -183,7 +224,7 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                             : Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: (mhsId == null)
+                      onPressed: (!isOpen || mhsId == null)
                           ? null
                           : () {
                               Navigator.push(
@@ -196,8 +237,8 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                                         ? "offline"
                                         : "online",
                                     matkul: widget.namaMatkul,
-                                    latKelas: widget.latitude,
-                                    lonKelas: widget.longitude,
+                                    latDosen: widget.latitude,
+                                    lonDosen: widget.longitude,
                                   ),
                                 ),
                               );

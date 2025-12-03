@@ -177,7 +177,7 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
-                      hintText: "Search berdasarkan nama matkul",
+                      hintText: "Search",
                       filled: true,
                       fillColor: Colors.white,
                       enabledBorder: OutlineInputBorder(
@@ -192,7 +192,9 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                     onChanged: (v) => setState(() => search = v),
                   ),
                 ),
+
                 const SizedBox(width: 10),
+
                 InkWell(
                   onTap: () => setState(() => ascending = !ascending),
                   child: Container(
@@ -201,7 +203,7 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                       border: Border.all(color: Colors.black),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(ascending ? Icons.sort_by_alpha : Icons.sort),
+                    child: const Icon(Icons.sort),
                   ),
                 ),
               ],
@@ -248,18 +250,23 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
 
                         return GestureDetector(
                           onTap: () {
+                            final jamParts = mk.jam.split(" - ");
+                            final jamMulai = jamParts[0];
+                            final jamSelesai = jamParts[1];
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DetailMatkulDosenPage(
-                                  nama: mk.nama,
-                                  ruangan: mk.ruangan,
-                                  jam: mk.jam,
-                                  jadwalId: mk.jadwalId, // FIX WAJIB ADA
+                                  jadwalId: mk.jadwalId,
+                                  namaMatkul: mk.nama,
+                                  jamMulai: jamMulai,
+                                  jamSelesai: jamSelesai,
                                 ),
                               ),
                             );
                           },
+
                           child: Container(
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -278,22 +285,24 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 6,
+                                    horizontal: 8,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.black,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      mk.nama,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                      ),
+                                  child: Text(
+                                    mk.nama,
+                                    textAlign: TextAlign.center,
+                                    softWrap: true,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ),
+
                                 const SizedBox(height: 10),
                                 Text(
                                   "Hari     : ${mk.hari}",
