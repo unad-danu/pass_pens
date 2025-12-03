@@ -1,8 +1,10 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/services/absensi_service.dart';
 import '../../data/services/face_recognition_service.dart';
@@ -46,8 +48,35 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
   final ImagePicker _picker = ImagePicker();
   final AbsensiService absensiService = AbsensiService();
 
+  // 🔥 tipe presensi yang akan dipakai, default dari parent
+  String tipePresensi = "";
+
   File? imageFile;
   bool loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    tipePresensi = widget.tipePresensi; // default
+    loadTipePresensi(); // 🔥 AMBIL DARI DATABASE
+  }
+
+  // =======================================================
+  // 🔥🔥 AMBIL TIPE PRESENSI DARI SUPABASE (TAMBAHAN)
+  // =======================================================
+  Future<void> loadTipePresensi() async {
+    final data = await Supabase.instance.client
+        .from('jadwal')
+        .select('tipe_presensi')
+        .eq('id', widget.jadwalId)
+        .maybeSingle();
+
+    if (data != null && mounted) {
+      setState(() {
+        tipePresensi = data['tipe_presensi'] ?? widget.tipePresensi;
+      });
+    }
+  }
 
   // CAMERA PERMISSION
   Future<bool> _ensureCameraPermission() async {
@@ -137,7 +166,7 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
   // SUBMIT PRESENSI
   Future<void> submit() async {
     // Mode online
-    if (widget.tipePresensi == "online") {
+    if (tipePresensi == "online") {
       setState(() => loading = true);
 
       try {
@@ -152,6 +181,7 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
       } catch (e) {
         setState(() => loading = false);
         Helpers.showSnackBar(context, "Gagal presensi: $e");
+        log(e.toString(), name: 'PresensiOnlineError');
       }
 
       return;
@@ -276,7 +306,7 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                     ),
                     child: Center(
                       child: Text(
-                        widget.tipePresensi == "online"
+                        tipePresensi == "online"
                             ? "Presensi Online"
                             : "Foto Presensi",
                         style: const TextStyle(
@@ -288,7 +318,7 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (widget.tipePresensi == "offline") ...[
+                  if (tipePresensi == "offline") ...[
                     Container(
                       height: 250,
                       width: double.infinity,

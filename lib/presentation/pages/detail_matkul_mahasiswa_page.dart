@@ -44,47 +44,48 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   @override
   void initState() {
     super.initState();
+
     _updateOpenStatus();
     _loadHistory();
+
+    final channel = supabase.channel('jadwal_${widget.jadwalId}');
+
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'jadwal',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'id',
+        value: widget.jadwalId,
+      ),
+
+      callback: (payload) {
+        print("Jadwal updated!");
+        _updateOpenStatus();
+        _loadHistory(); // ← TAMBAHKAN INI
+      },
+    );
+
+    channel.subscribe();
   }
 
   Future<void> _updateOpenStatus() async {
-    // Set last opened & is_open = true
-    await supabase
-        .from('jadwal')
-        .update({
-          'is_open': true,
-          'last_opened_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', widget.jadwalId);
+    try {
+      final row = await supabase
+          .from('jadwal')
+          .select('is_open')
+          .eq('id', widget.jadwalId)
+          .maybeSingle();
 
-    // Ambil status terbaru
-    final row = await supabase
-        .from('jadwal')
-        .select('jam_selesai, is_open')
-        .eq('id', widget.jadwalId)
-        .maybeSingle();
-
-    if (row != null) {
-      final sekarang = TimeOfDay.now();
-      final selesai = TimeOfDay(
-        hour: int.parse(row['jam_selesai'].split(':')[0]),
-        minute: int.parse(row['jam_selesai'].split(':')[1]),
-      );
-
-      bool lewat =
-          sekarang.hour > selesai.hour ||
-          (sekarang.hour == selesai.hour && sekarang.minute > selesai.minute);
-
-      if (lewat) {
-        await supabase
-            .from('jadwal')
-            .update({'is_open': false})
-            .eq('id', widget.jadwalId);
-        isOpen = false;
-      } else {
-        isOpen = true;
+      if (row == null) {
+        setState(() => isOpen = false);
+        return;
       }
+
+      setState(() => isOpen = row['is_open'] ?? false);
+    } catch (e) {
+      setState(() => isOpen = false);
     }
   }
 
@@ -145,244 +146,255 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
     return Scaffold(
       appBar: const CustomAppBar(showBack: false, role: "mhs"),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header + Back
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context),
-                    borderRadius: BorderRadius.circular(50),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.arrow_back, size: 28),
-                    ),
-                  ),
-                ),
-                const Text(
-                  "Detail Matakuliah",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Card Matkul
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _updateOpenStatus();
+          await _loadHistory();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header + Back
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        widget.namaMatkul,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(50),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Icon(Icons.arrow_back, size: 28),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-                  Text("Dosen : ${widget.dosen}"),
-                  const SizedBox(height: 4),
-                  Text("Tempat : ${widget.ruangan}"),
-                  const SizedBox(height: 4),
-                  Text("Jadwal : ${widget.jadwal}"),
-                  const SizedBox(height: 4),
-                  Text("Attendance Terakhir : ${widget.attendanceTerakhir}"),
-
-                  const SizedBox(height: 20),
-
-                  // Tombol Presensi
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.isOffline
-                            ? Colors.red
-                            : Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onPressed: (!isOpen || mhsId == null)
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PresensiMahasiswaPage(
-                                    mhsId: mhsId!,
-                                    jadwalId: widget.jadwalId,
-                                    tipePresensi: widget.isOffline
-                                        ? "offline"
-                                        : "online",
-                                    matkul: widget.namaMatkul,
-                                    latDosen: widget.latitude,
-                                    lonDosen: widget.longitude,
-                                  ),
-                                ),
-                              );
-                            },
-                      child: const Text(
-                        "Presensi",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  const Text(
+                    "Detail Matakuliah",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 25),
+              const SizedBox(height: 16),
 
-            // ====================
-            // History Presensi
-            // ====================
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "History Presensi",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+              // Card Matkul
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.black),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.namaMatkul,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                    Text("Dosen : ${widget.dosen}"),
+                    const SizedBox(height: 4),
+                    Text("Tempat : ${widget.ruangan}"),
+                    const SizedBox(height: 4),
+                    Text("Jadwal : ${widget.jadwal}"),
+                    const SizedBox(height: 4),
+                    Text("Attendance Terakhir : ${widget.attendanceTerakhir}"),
 
-                  if (isLoadingHistory)
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(),
-                    )
-                  else if (historyAbsensi.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text("Belum ada data presensi."),
-                    )
-                  else
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                      ),
-                      child: Column(
-                        children: [
-                          // header
-                          Container(
-                            color: Colors.lightBlue[100],
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: const Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    "ID",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 20),
+
+                    // Tombol Presensi
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.isOffline
+                              ? Colors.red
+                              : Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: (!isOpen || mhsId == null)
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PresensiMahasiswaPage(
+                                      mhsId: mhsId!,
+                                      jadwalId: widget.jadwalId,
+                                      tipePresensi: widget.isOffline
+                                          ? "offline"
+                                          : "online",
+                                      matkul: widget.namaMatkul,
+                                      latDosen: widget.latitude,
+                                      lonDosen: widget.longitude,
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Tanggal",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Status",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                                );
+                              },
+                        child: const Text(
+                          "Presensi",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                          for (var row in historyAbsensi)
+              const SizedBox(height: 25),
+
+              // ====================
+              // History Presensi
+              // ====================
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          "History Presensi",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    if (isLoadingHistory)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(),
+                      )
+                    else if (historyAbsensi.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text("Belum ada data presensi."),
+                      )
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black),
+                        ),
+                        child: Column(
+                          children: [
+                            // header
                             Container(
+                              color: Colors.lightBlue[100],
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: Colors.grey.shade300),
-                                ),
-                              ),
-                              child: Row(
+                              child: const Row(
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      row["id"].toString(),
+                                      "ID",
                                       textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
-                                      _formatDateTime(row["dibuat"]),
+                                      "Tanggal",
                                       textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
-                                      row["status"]?.toString() ?? "",
+                                      "Status",
                                       textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 30),
-          ],
+                            for (var row in historyAbsensi)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        row["id"].toString(),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        _formatDateTime(row["dibuat"]),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        row["status"]?.toString() ?? "",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

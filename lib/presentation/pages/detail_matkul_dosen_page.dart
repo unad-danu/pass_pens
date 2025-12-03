@@ -133,6 +133,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     }
   }
 
+  // iki
   Future<void> _bukaPresensi(String mode) async {
     setState(() => isLoading = true);
 
@@ -156,7 +157,7 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
       return;
     }
 
-    // 3. MEMANGGIL AbsensiService
+    // 2. Panggil service
     final success = await absensiService.bukaPresensi(
       widget.jadwalId,
       tipePresensi: mode,
