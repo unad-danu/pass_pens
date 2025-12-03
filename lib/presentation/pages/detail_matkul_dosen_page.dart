@@ -133,12 +133,10 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     }
   }
 
-  // ========== OPEN / CLOSE PRESENSI ==========
-
   Future<void> _bukaPresensi(String mode) async {
     setState(() => isLoading = true);
 
-    // 1. Tutup presensi pada jadwal ini jika sudah terbuka
+    // 1. Cek apakah sudah ada presensi aktif pada jadwal ini
     final jadwal = await supabase
         .from("jadwal")
         .select("is_open")
@@ -158,44 +156,22 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
       return;
     }
 
-    // 2. Cek dan TUTUP semua presensi dosen lain yang masih terbuka
-    final bentrok = await supabase
-        .from("jadwal")
-        .select("id")
-        .eq("is_open", true)
-        .neq("id", widget.jadwalId);
+    // 3. MEMANGGIL AbsensiService
+    final success = await absensiService.bukaPresensi(
+      widget.jadwalId,
+      tipePresensi: mode,
+    );
 
-    if (bentrok.isNotEmpty) {
-      for (var j in bentrok) {
-        await supabase
-            .from("jadwal")
-            .update({"is_open": false})
-            .eq("id", j["id"]);
-      }
-
+    if (!success) {
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Presensi lain yang masih terbuka telah ditutup otomatis.",
-          ),
-          backgroundColor: Colors.orange,
+          content: Text("Gagal membuka presensi."),
+          backgroundColor: Colors.red,
         ),
       );
+      return;
     }
-
-    // 3. Buka presensi baru + expired otomatis 1 jam
-    final now = DateTime.now();
-    final expired = now.add(const Duration(hours: 1));
-
-    await supabase
-        .from("jadwal")
-        .update({
-          "is_open": true,
-          "last_opened_at": now.toIso8601String(),
-          "expired_at": expired.toIso8601String(),
-          "tipe": mode,
-        })
-        .eq("id", widget.jadwalId);
 
     setState(() => isOpen = true);
 
@@ -209,6 +185,43 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     );
 
     await _loadAll();
+  }
+
+  Future<void> _tutupPresensi() async {
+    setState(() => isLoading = true);
+
+    try {
+      // Tutup presensi via AbsensiService
+      final result = await absensiService.tutupPresensi(widget.jadwalId);
+
+      if (!result) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Gagal menutup presensi."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() => isOpen = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Presensi telah ditutup."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      await _loadAll();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+      );
+    }
+
+    setState(() => isLoading = false);
   }
 
   @override

@@ -58,90 +58,106 @@ class AbsensiService {
     });
   }
 
-  // ===============================
-  // BUKA PRESENSI (DOSEN)
-  // ===============================
-  Future<bool> bukaPresensi({
-    required int jadwalId,
-    required String tipe,
+  Future<bool> bukaPresensi(
+    int jadwalId, {
+    required String tipePresensi,
   }) async {
     try {
-      // 1. Ambil informasi jadwal yg ingin dibuka
       final jadwal = await supabase
           .from("jadwal")
-          .select("hari, jam_mulai, jam_selesai, kelas, semester, dosen_id")
+          .select("""
+          hari,
+          jam_mulai,
+          jam_selesai,
+          dosen_id,
+          kelas_mk:kelas_id ( semester )
+        """)
           .eq("id", jadwalId)
           .maybeSingle();
 
       if (jadwal == null) return false;
 
-      final hari = jadwal["hari"];
-      final jamMulai = jadwal["jam_mulai"];
-      final jamSelesai = jadwal["jam_selesai"];
-      final kelas = jadwal["kelas"];
-      final semester = jadwal["semester"];
-      final dosenId = jadwal["dosen_id"];
+      // Ambil jam_mulai & jam_selesai string
+      final jamMulaiStr = jadwal["jam_mulai"]; // example: "08:50:00"
+      final jamSelesaiStr = jadwal["jam_selesai"];
 
-      // ===============================
-      // CEK 1: DOSEN SEDANG MENGAJAR?
-      // ===============================
-      final cekJadwalDosen = await supabase
-          .from("jadwal")
-          .select("id")
-          .eq("dosen_id", dosenId)
-          .eq("hari", hari)
-          .or("jam_mulai < '$jamSelesai' AND jam_selesai > '$jamMulai'")
-          .limit(1);
+      // Split string
+      final mulaiParts = jamMulaiStr.split(":");
+      final selesaiParts = jamSelesaiStr.split(":");
 
-      final dosenSedangMengajar = cekJadwalDosen.isNotEmpty;
+      // Ambil waktu hari ini
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-      // Jika dosen sedang mengajar → BOLEH langsung buka
-      if (dosenSedangMengajar) {
-        return await _insertPresensi(jadwalId, tipe);
+      // Buat DateTime yang benar
+      final jamMulai = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        int.parse(mulaiParts[0]),
+        int.parse(mulaiParts[1]),
+        int.parse(mulaiParts[2]),
+      );
+
+      final jamSelesai = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        int.parse(selesaiParts[0]),
+        int.parse(selesaiParts[1]),
+        int.parse(selesaiParts[2]),
+      );
+
+      // Hitung expired
+      late DateTime expiredAt;
+
+      if (now.isAfter(jamMulai) && now.isBefore(jamSelesai)) {
+        // Dalam jam kuliah → expired sesuai jadwal
+        expiredAt = jamSelesai;
+      } else {
+        // Luar jam kuliah → expired 1 jam
+        expiredAt = now.add(const Duration(hours: 1));
       }
 
-      // ======================================
-      // CEK 2: MAHASISWA PUNYA JADWAL LAIN?
-      // ======================================
-      final cekBentrokMhs = await supabase
+      // Tutup semua presensi lain
+      await supabase
           .from("jadwal")
-          .select("id")
-          .eq("kelas", kelas)
-          .eq("semester", semester)
-          .eq("hari", hari)
-          .neq("id", jadwalId)
-          .or("jam_mulai < '$jamSelesai' AND jam_selesai > '$jamMulai'")
-          .limit(1);
+          .update({"is_open": false})
+          .eq("is_open", true);
 
-      if (cekBentrokMhs.isNotEmpty) {
-        return false; // mahasiswa ada jadwal lain → tidak boleh buka
-      }
+      // Buka presensi
+      await supabase
+          .from("jadwal")
+          .update({
+            "is_open": true,
+            "last_opened_at": now.toIso8601String(),
+            "expired_at": expiredAt.toIso8601String(),
+            "tipe_presensi": tipePresensi,
+          })
+          .eq("id", jadwalId);
 
-      // Tidak bentrok → boleh buka
-      return await _insertPresensi(jadwalId, tipe);
+      return true;
     } catch (e) {
+      print("ERROR buka presensi: $e");
       return false;
     }
   }
 
-  // Insert presensi
-  Future<bool> _insertPresensi(int jadwalId, String tipe) async {
-    final now = DateTime.now();
-    final autoClose = now.add(const Duration(hours: 1));
+  Future<bool> tutupPresensi(int jadwalId) async {
+    try {
+      await supabase
+          .from('jadwal')
+          .update({'is_open': false, 'expired_at': null})
+          .eq('id', jadwalId);
 
-    await supabase.from("presensi").insert({
-      "jadwal_id": jadwalId,
-      "tipe": tipe,
-      "pertemuan": await _getPertemuanAktif(jadwalId),
-      "opened_at": now.toIso8601String(),
-      "auto_close_at": autoClose.toIso8601String(),
-    });
-
-    return true;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ===============================
-  // PERINGKATAN
+  // PERINGKATAN / PERTEMUAN
   // ===============================
   Future<int> _getPertemuanAktif(int jadwalId) async {
     final data = await supabase
@@ -150,10 +166,6 @@ class AbsensiService {
         .eq("id", jadwalId)
         .maybeSingle();
 
-    if (data == null || data["pertemuan"] == null) {
-      return 1;
-    }
-
-    return data["pertemuan"] as int;
+    return data?["pertemuan"] ?? 1;
   }
 }
