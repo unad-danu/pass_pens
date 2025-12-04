@@ -271,13 +271,17 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                                   ),
                                 );
 
-                                /// Jika presensi berhasil, tombol langsung dikunci
                                 if (result == true) {
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                  );
+
                                   setState(() {
                                     isAbsensiToday = true;
                                   });
 
-                                  _loadHistory(); // auto refresh history
+                                  // Tidak harus menunggu database untuk men-disable tombol
+                                  _loadHistory();
                                 }
                               },
                         child: Text(
