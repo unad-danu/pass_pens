@@ -2,21 +2,15 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image/image.dart' as img;
 
 import '../../data/services/absensi_service.dart';
+import '../../data/services/location_services.dart';
 import '../../data/services/face_recognition_service.dart';
 import '../../core/helpers.dart';
 import '../widgets/custom_appbar.dart';
-import 'package:image/image.dart' as img;
-
-// isolate
-Future<bool> _isFullFaceIsolate(String imagePath) async {
-  final service = FaceRecognitionService();
-  return service.isFullFace(File(imagePath));
-}
 
 class PresensiMahasiswaPage extends StatefulWidget {
   final int mhsId;
@@ -39,22 +33,23 @@ class PresensiMahasiswaPage extends StatefulWidget {
 class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
   final ImagePicker _picker = ImagePicker();
   final AbsensiService absensiService = AbsensiService();
+  final LocationService locationService = LocationService();
+  final FaceRecognitionService faceService = FaceRecognitionService();
 
-  // 🔥 tipe presensi yang akan dipakai, default dari parent
   String tipePresensi = "";
-
   File? imageFile;
   bool loading = false;
+  bool loadingImage = false;
 
   @override
   void initState() {
     super.initState();
-    tipePresensi = widget.tipePresensi; // default
-    loadTipePresensi(); // 🔥 AMBIL DARI DATABASE
+    tipePresensi = widget.tipePresensi;
+    loadTipePresensi();
   }
 
   // =======================================================
-  // 🔥🔥 AMBIL TIPE PRESENSI DARI SUPABASE (TAMBAHAN)
+  // 🔥 Ambil tipe presensi dari Supabase
   // =======================================================
   Future<void> loadTipePresensi() async {
     final data = await Supabase.instance.client
@@ -70,7 +65,9 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
     }
   }
 
-  // CAMERA PERMISSION
+  // =======================================================
+  // PERMISSION KAMERA
+  // =======================================================
   Future<bool> _ensureCameraPermission() async {
     var status = await Permission.camera.status;
 
@@ -90,41 +87,13 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
     return false;
   }
 
-  // LOCATION PERMISSION
-  Future<bool> _ensureLocationPermission() async {
-    var status = await Permission.locationWhenInUse.status;
-
-    if (status.isGranted) return true;
-
-    if (status.isDenied) {
-      final req = await Permission.locationWhenInUse.request();
-      return req.isGranted;
-    }
-
-    if (status.isPermanentlyDenied) {
-      Helpers.showSnackBar(context, "Aktifkan izin lokasi di pengaturan!");
-      await openAppSettings();
-      return false;
-    }
-
-    return false;
-  }
-
-  // CHECK GPS
-  Future<bool> _ensureLocationServiceEnabled() async {
-    final enabled = await Geolocator.isLocationServiceEnabled();
-    if (enabled) return true;
-
-    Helpers.showSnackBar(context, "GPS belum aktif! Mohon aktifkan GPS.");
-    await Geolocator.openLocationSettings();
-    await Future.delayed(const Duration(seconds: 2));
-
-    return await Geolocator.isLocationServiceEnabled();
-  }
-
-  // TAKE PHOTO
+  // =======================================================
+  // AMBIL FOTO SELFIE
+  // =======================================================
   Future<void> takePhoto() async {
     if (!await _ensureCameraPermission()) return;
+
+    setState(() => loadingImage = true);
 
     try {
       final picked = await _picker.pickImage(
@@ -133,7 +102,10 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
         imageQuality: 85,
       );
 
-      if (picked == null) return;
+      if (picked == null) {
+        setState(() => loadingImage = false);
+        return;
+      }
 
       // Fix orientation
       final bytes = await picked.readAsBytes();
@@ -141,80 +113,83 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
 
       if (original == null) {
         Helpers.showSnackBar(context, "Gagal membaca foto!");
+        setState(() => loadingImage = false);
         return;
       }
 
       final fixed = img.copyRotate(original, angle: 0);
       final fixedPath = picked.path;
-
       File(fixedPath).writeAsBytesSync(img.encodeJpg(fixed));
 
-      setState(() => imageFile = File(fixedPath));
+      setState(() {
+        imageFile = File(fixedPath);
+        loadingImage = false;
+      });
     } catch (e) {
+      setState(() => loadingImage = false);
       Helpers.showSnackBar(context, "Gagal mengakses kamera: $e");
     }
   }
 
+  // =======================================================
   // SUBMIT PRESENSI
+  // =======================================================
   Future<void> submit() async {
-    // Mode online
+    // Mode Online
     if (tipePresensi == "online") {
-      setState(() => loading = true);
-
-      try {
-        await absensiService.presensiOnline(
-          mhsId: widget.mhsId,
-          jadwalId: widget.jadwalId,
-        );
-
-        setState(() => loading = false);
-        Helpers.showSnackBar(context, "Presensi Online Berhasil!");
-        Navigator.pop(context);
-      } catch (e) {
-        setState(() => loading = false);
-        Helpers.showSnackBar(context, "Gagal presensi: $e");
-        log(e.toString(), name: 'PresensiOnlineError');
-      }
-
+      await _submitOnline();
       return;
     }
 
-    // Mode offline (foto + GPS)
+    // Mode Offline
+    await _submitOffline();
+  }
+
+  Future<void> _submitOnline() async {
+    setState(() => loading = true);
+
+    try {
+      await absensiService.presensiOnline(
+        mhsId: widget.mhsId,
+        jadwalId: widget.jadwalId,
+      );
+
+      Helpers.showSnackBar(context, "Presensi Online Berhasil!");
+      Navigator.pop(context);
+    } catch (e) {
+      Helpers.showSnackBar(context, "Gagal presensi: $e");
+      log(e.toString(), name: 'PresensiOnlineError');
+    }
+
+    setState(() => loading = false);
+  }
+
+  // =======================================================
+  // OFFLINE => Foto + Lokasi + Face Recognition
+  // =======================================================
+  Future<void> _submitOffline() async {
     if (imageFile == null) {
       Helpers.showSnackBar(context, "Ambil foto terlebih dahulu!");
       return;
     }
 
-    if (!await _ensureLocationPermission()) {
-      Helpers.showSnackBar(context, "Izin lokasi ditolak!");
-      return;
-    }
+    // Cek izin lokasi
+    final pos = await locationService.getCurrentLocation();
 
-    if (!await _ensureLocationServiceEnabled()) {
-      Helpers.showSnackBar(context, "GPS belum aktif!");
+    if (pos == null) {
+      Helpers.showSnackBar(context, "Izin lokasi ditolak atau gagal!");
       return;
     }
 
     setState(() => loading = true);
 
     try {
-      final clear = await FaceRecognitionService().isFullFace(imageFile!);
+      // Cek wajah
+      final clear = await faceService.isFullFace(imageFile!);
 
       if (!clear) {
         setState(() => loading = false);
         Helpers.showSnackBar(context, "Wajah tidak terdeteksi dengan jelas!");
-        return;
-      }
-
-      Position pos;
-
-      try {
-        pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best,
-        );
-      } catch (e) {
-        Helpers.showSnackBar(context, "Gagal mendapatkan lokasi: $e");
-        setState(() => loading = false);
         return;
       }
 
@@ -226,15 +201,18 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
         lng: pos.longitude,
       );
 
-      setState(() => loading = false);
       Helpers.showSnackBar(context, "Presensi Offline Berhasil!");
       Navigator.pop(context);
     } catch (e) {
-      setState(() => loading = false);
       Helpers.showSnackBar(context, "Terjadi kesalahan: $e");
     }
+
+    setState(() => loading = false);
   }
 
+  // =======================================================
+  // UI
+  // =======================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,12 +237,13 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    textAlign: TextAlign.left,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
+
+            // Card
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -293,8 +272,11 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 20),
+
                   if (tipePresensi == "offline") ...[
+                    // Foto
                     Container(
                       height: 250,
                       width: double.infinity,
@@ -304,7 +286,9 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: imageFile == null
+                        child: loadingImage
+                            ? const Center(child: CircularProgressIndicator())
+                            : imageFile == null
                             ? Container(
                                 color: Colors.grey[300],
                                 child: const Center(
@@ -314,7 +298,9 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                             : Image.file(imageFile!, fit: BoxFit.cover),
                       ),
                     ),
+
                     const SizedBox(height: 20),
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -322,8 +308,11 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
                         child: const Text("Ambil Foto Selfie"),
                       ),
                     ),
+
                     const SizedBox(height: 12),
                   ],
+
+                  // Submit button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

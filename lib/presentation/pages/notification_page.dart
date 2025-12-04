@@ -27,7 +27,6 @@ class _NotificationPageState extends State<NotificationPage> {
     futureNotif = loadNotifications();
   }
 
-  // 🔥 Ambil notifikasi
   Future<List<Map<String, dynamic>>> loadNotifications() async {
     try {
       final response = await supabase
@@ -43,7 +42,6 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  // 🔥 Tandai sebagai dibaca
   Future<void> markAsRead(int id) async {
     try {
       await supabase.rpc('read_notification', params: {"notif_id": id});
@@ -52,7 +50,6 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  // 🔥 Convert ke timeago
   String timeAgo(String? timestamp) {
     if (timestamp == null) return "";
     try {
@@ -110,40 +107,49 @@ class _NotificationPageState extends State<NotificationPage> {
                       onTap: () async {
                         await markAsRead(notifId);
 
+                        // cari jadwal detail berdasarkan jadwalId
+                        final jadwal = await supabase
+                            .from("jadwal")
+                            .select("""
+      id,
+      jam_mulai,
+      jam_selesai,
+      matkul:matkul_id (nama_mk),
+      dosen:dosen_id (nama),
+      ruangan:ruangan_id (nama)
+    """)
+                            .eq("id", jadwalId)
+                            .single();
+
                         if (!mounted) return;
 
-                        // refresh list
-                        setState(() => futureNotif = loadNotifications());
-
-                        // Route: Mahasiswa
                         if (role == "mhs") {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DetailMatkulMahasiswaPage(
-                                namaMatkul: n["title"] ?? "",
                                 jadwalId: jadwalId,
-                                dosen: "",
-                                ruangan: "",
-                                jadwal: "",
+                                namaMatkul: jadwal["matkul"]["nama_mk"] ?? "",
+                                dosen: jadwal["dosen"]["nama"] ?? "",
+                                ruangan: jadwal["ruangan"]["nama"] ?? "",
+                                jadwal:
+                                    "${jadwal["jam_mulai"]} - ${jadwal["jam_selesai"]}",
                                 attendanceTerakhir: "",
-                                latitude: 0,
+                                latitude: 0, // jadwal tidak punya latitude
                                 longitude: 0,
                                 isOffline: false,
                               ),
                             ),
                           );
-                        }
-                        // Route: Dosen
-                        else {
+                        } else {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DetailMatkulDosenPage(
                                 jadwalId: jadwalId,
-                                namaMatkul: n["title"] ?? "",
-                                jamMulai: n["jam_mulai"] ?? "",
-                                jamSelesai: n["jam_selesai"] ?? "",
+                                namaMatkul: jadwal["matkul"] ?? "",
+                                jamMulai: jadwal["jam_mulai"] ?? "",
+                                jamSelesai: jadwal["jam_selesai"] ?? "",
                               ),
                             ),
                           );

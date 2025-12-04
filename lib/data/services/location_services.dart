@@ -14,18 +14,22 @@ class LocationService {
         permission == LocationPermission.always;
   }
 
-  /// Ambil lokasi pengguna
+  /// Ambil lokasi terakhir
   Future<Position?> getCurrentLocation() async {
     final allowed = await requestPermission();
     if (!allowed) return null;
 
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      await Geolocator.openLocationSettings();
+      return null;
+    }
+
     return Geolocator.getCurrentPosition();
   }
 
-  /// Hitung jarak antar titik (meter)
+  /// Hitung jarak antar titik
   double distanceInMeters(double lat1, double lon1, double lat2, double lon2) {
-    const R = 6371000; // radius bumi
-
+    const R = 6371000;
     double dLat = _degToRad(lat2 - lat1);
     double dLon = _degToRad(lon2 - lon1);
 

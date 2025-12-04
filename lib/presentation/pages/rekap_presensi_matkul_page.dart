@@ -11,7 +11,12 @@ class RekapPresensiMatkulPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> pertemuan = List.generate(16, (i) {
-      return {"minggu": i + 1, "hadir": 76, "alpha": 11};
+      return {
+        "minggu": i + 1,
+        "hadir": 76,
+        "alpha": 11,
+        "jadwal_id": data["jadwal_id"], // 🔥 WAJIB DITAMBAHKAN
+      };
     });
 
     return Scaffold(

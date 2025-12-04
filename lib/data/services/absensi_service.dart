@@ -240,7 +240,7 @@ class AbsensiService {
     required double lng,
     double latDosenFromCaller = 0,
     double lngDosenFromCaller = 0,
-    double radiusMeters = 50,
+    double radiusMeters = 80,
   }) async {
     final open = await _isPresensiOpen(jadwalId);
     if (!open) throw Exception("Presensi tidak aktif atau sudah ditutup.");
@@ -248,61 +248,69 @@ class AbsensiService {
     double? latDosen;
     double? lngDosen;
 
+    // 1. Jika view / caller mengirim koordinat dosen → pakai
     if (latDosenFromCaller != 0 && lngDosenFromCaller != 0) {
       latDosen = latDosenFromCaller;
       lngDosen = lngDosenFromCaller;
     } else {
+      // 2. Ambil dosen_id dari jadwal
       final jd = await supabase
           .from('jadwal')
-          .select('dosen_id')
+          .select('dosen_id, pertemuan')
           .eq('id', jadwalId)
           .maybeSingle();
 
-      final loc = await supabase
-          .from('dosen_location')
-          .select('lat, lng')
-          .eq('dosen_id', jd?['dosen_id'])
-          .maybeSingle();
+      if (jd == null) throw Exception("Jadwal tidak ditemukan.");
 
-      latDosen = loc?['lat'];
-      lngDosen = loc?['lng'];
+      final dosenId = jd['dosen_id'];
+      final pertemuan = jd['pertemuan'] ?? 1;
+
+      // 3. Ambil lokasi dosen di tabel dosen_location
+      if (dosenId != null) {
+        final loc = await supabase
+            .from('dosen_location')
+            .select('lat, lng')
+            .eq('dosen_id', dosenId)
+            .maybeSingle();
+
+        if (loc != null) {
+          latDosen = (loc['lat'] as num?)?.toDouble();
+          lngDosen = (loc['lng'] as num?)?.toDouble();
+        }
+      }
     }
 
     if (latDosen == null || lngDosen == null) {
-      latDosen = 0;
-      lngDosen = 0;
+      throw Exception("Lokasi dosen belum tersedia.");
     }
 
-    ///
-    /// HITUNG JARAK (Haversine)
-    ///
-    double distanceMeters = 0;
+    // HITUNG JARAK
+    const R = 6371000.0;
+    double toRad(double v) => v * pi / 180.0;
 
-    if (latDosen != 0 && lngDosen != 0) {
-      const R = 6371000.0;
-      double toRad(double v) => v * pi / 180.0;
+    final dLat = toRad(latDosen - lat);
+    final dLng = toRad(lngDosen - lng);
 
-      final dLat = toRad(latDosen - lat);
-      final dLng = toRad(lngDosen - lng);
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(toRad(lat)) * cos(toRad(latDosen)) * sin(dLng / 2) * sin(dLng / 2);
 
-      final a =
-          sin(dLat / 2) * sin(dLat / 2) +
-          cos(toRad(lat)) *
-              cos(toRad(latDosen)) *
-              sin(dLng / 2) *
-              sin(dLng / 2);
-
-      final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-      distanceMeters = R * c;
-    } else {
-      distanceMeters = double.infinity;
-    }
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    final distanceMeters = R * c;
 
     final distanceValid = distanceMeters <= radiusMeters;
 
     // Upload foto
     final fotoUrl = await _uploadFoto(foto, mhsId: mhsId, jadwalId: jadwalId);
+
+    // Ambil pertemuan jadwal
+    final jad = await supabase
+        .from('jadwal')
+        .select('pertemuan')
+        .eq('id', jadwalId)
+        .maybeSingle();
+
+    final pertemuanAbsensi = jad?['pertemuan'] ?? 1;
 
     // Insert absensi
     await supabase.from('absensi').insert({
@@ -317,6 +325,7 @@ class AbsensiService {
       'valid': distanceValid,
       'jarak': distanceMeters,
       'distance_valid': distanceValid,
+      'pertemuan': pertemuanAbsensi,
     });
 
     return true;
