@@ -38,6 +38,8 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
   int? mhsId; // ← DISIMPAN DI SINI
   bool isOpen = false;
   bool isLoadingHistory = true;
+  bool isAbsensiToday = false;
+
   String? errorMessage;
   List<Map<String, dynamic>> historyAbsensi = [];
 
@@ -68,6 +70,25 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
     );
 
     channel.subscribe();
+  }
+
+  Future<void> _cekSudahPresensiHariIni() async {
+    if (mhsId == null) return;
+
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+
+    final data = await supabase
+        .from('absensi')
+        .select('id')
+        .eq('mhs_id', mhsId!)
+        .eq('jadwal_id', widget.jadwalId)
+        .gt('dibuat', startOfDay.toIso8601String())
+        .maybeSingle();
+
+    setState(() {
+      isAbsensiToday = data != null;
+    });
   }
 
   Future<void> _updateOpenStatus() async {
@@ -122,6 +143,7 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
         historyAbsensi = List<Map<String, dynamic>>.from(data as List<dynamic>);
         isLoadingHistory = false;
       });
+      await _cekSudahPresensiHariIni();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -133,6 +155,7 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
         context,
       ).showSnackBar(SnackBar(content: Text("Gagal memuat history: $e")));
     }
+    await _cekSudahPresensiHariIni();
   }
 
   String _formatDateTime(dynamic v) {
@@ -226,15 +249,15 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: widget.isOffline
-                              ? Colors.red
-                              : Colors.blue,
+                          backgroundColor: isAbsensiToday
+                              ? Colors.grey
+                              : (widget.isOffline ? Colors.red : Colors.blue),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        onPressed: (!isOpen || mhsId == null)
+                        onPressed: (!isOpen || mhsId == null || isAbsensiToday)
                             ? null
-                            : () {
-                                Navigator.push(
+                            : () async {
+                                final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => PresensiMahasiswaPage(
@@ -244,155 +267,163 @@ class _DetailMatkulMahasiswaPageState extends State<DetailMatkulMahasiswaPage> {
                                           ? "offline"
                                           : "online",
                                       matkul: widget.namaMatkul,
-                                      latDosen: widget.latitude,
-                                      lonDosen: widget.longitude,
                                     ),
                                   ),
                                 );
+
+                                /// Jika presensi berhasil, tombol langsung dikunci
+                                if (result == true) {
+                                  setState(() {
+                                    isAbsensiToday = true;
+                                  });
+
+                                  _loadHistory(); // auto refresh history
+                                }
                               },
-                        child: const Text(
-                          "Presensi",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ====================
-              // History Presensi
-              // ====================
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Center(
                         child: Text(
-                          "History Presensi",
-                          style: TextStyle(
+                          isAbsensiToday ? "Sudah Presensi" : "Presensi",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 25),
 
-                    const SizedBox(height: 12),
+                    // ====================
+                    // History Presensi
+                    // ====================
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "History Presensi",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
 
-                    if (isLoadingHistory)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(),
-                      )
-                    else if (historyAbsensi.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text("Belum ada data presensi."),
-                      )
-                    else
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                        ),
-                        child: Column(
-                          children: [
-                            // header
+                          const SizedBox(height: 12),
+
+                          if (isLoadingHistory)
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            )
+                          else if (historyAbsensi.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text("Belum ada data presensi."),
+                            )
+                          else
                             Container(
-                              color: Colors.lightBlue[100],
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: const Row(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black),
+                              ),
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      "ID",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  // header
+                                  Container(
+                                    color: Colors.lightBlue[100],
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "ID",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Tanggal",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Status",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Text(
-                                      "Tanggal",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+
+                                  for (var row in historyAbsensi)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              row["id"].toString(),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              _formatDateTime(row["dibuat"]),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              row["status"]?.toString() ?? "",
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      "Status",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
-
-                            for (var row in historyAbsensi)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        row["id"].toString(),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        _formatDateTime(row["dibuat"]),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        row["status"]?.toString() ?? "",
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
+                        ],
                       ),
+                    ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 30),
             ],
           ),
         ),

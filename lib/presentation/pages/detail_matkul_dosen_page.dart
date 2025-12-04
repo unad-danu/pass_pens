@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/absensi_service.dart';
 import '../widgets/custom_appbar.dart';
+import 'package:geolocator/geolocator.dart';
 
 class DetailMatkulDosenPage extends StatefulWidget {
   final int jadwalId;
@@ -24,6 +25,10 @@ class DetailMatkulDosenPage extends StatefulWidget {
 class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
   final supabase = Supabase.instance.client;
   final absensiService = AbsensiService();
+
+  DateTime _nowWib() => DateTime.now().toUtc().add(const Duration(hours: 7));
+  DateTime _utcToWib(DateTime utc) => utc.add(const Duration(hours: 7));
+  DateTime _wibToUtc(DateTime wib) => wib.subtract(const Duration(hours: 7));
 
   String kelasDetail = "";
   String hari = "-";
@@ -133,9 +138,80 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     }
   }
 
+  Future<bool> bukaPresensi(
+    int jadwalId, {
+    required String tipePresensi,
+    required double latDosen,
+    required double lngDosen,
+  }) async {
+    try {
+      final jadwal = await supabase
+          .from('jadwal')
+          .select('id, kelas_id, dosen_id, is_open')
+          .eq('id', jadwalId)
+          .maybeSingle();
+
+      if (jadwal == null) return false;
+
+      final kelasId = jadwal['kelas_id'];
+      final dosenId = jadwal['dosen_id'];
+
+      // Tutup presensi lain
+      await supabase
+          .from('jadwal')
+          .update({'is_open': false, 'expired_at': null})
+          .eq('kelas_id', kelasId)
+          .neq('id', jadwalId);
+
+      // Set waktu expired
+      final nowWib = _nowWib();
+      final expiredWib = nowWib.add(const Duration(hours: 1));
+
+      // Update jadwal open
+      await supabase
+          .from('jadwal')
+          .update({
+            'is_open': true,
+            'tipe_presensi': tipePresensi,
+            'last_opened_at': _wibToUtc(nowWib).toIso8601String(),
+            'expired_at': _wibToUtc(expiredWib).toIso8601String(),
+          })
+          .eq('id', jadwalId);
+
+      // ======================================
+      // SIMPAN LOKASI DOSEN (UPSERT)
+      // ======================================
+      if (dosenId != null) {
+        await supabase.from('dosen_location').upsert({
+          'dosen_id': dosenId,
+          'lat': latDosen,
+          'lng': lngDosen,
+        });
+      }
+
+      // Insert notif
+      await supabase.from('notifications').insert({
+        'jadwal_id': jadwalId,
+        'role': 'mhs',
+        'title': 'Presensi dibuka',
+        'subtitle':
+            'Presensi $tipePresensi dibuka oleh dosen — akan tutup otomatis dalam 1 jam.',
+        'highlight': true,
+      });
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // iki
   Future<void> _bukaPresensi(String mode) async {
     setState(() => isLoading = true);
+
+    Position pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
 
     // 1. Cek apakah sudah ada presensi aktif pada jadwal ini
     final jadwal = await supabase
@@ -158,9 +234,11 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
     }
 
     // 2. Panggil service
-    final success = await absensiService.bukaPresensi(
+    final success = await bukaPresensi(
       widget.jadwalId,
       tipePresensi: mode,
+      latDosen: pos.latitude,
+      lngDosen: pos.longitude,
     );
 
     if (!success) {

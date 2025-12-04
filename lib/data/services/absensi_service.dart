@@ -29,7 +29,7 @@ class AbsensiService {
     final bool isOpen = res['is_open'] ?? false;
     final expiredAt = res['expired_at'];
 
-    if (isOpen || expiredAt != null) return;
+    if (isOpen || expiredAt == null) return;
 
     try {
       final expiredUtc = DateTime.parse(expiredAt).toUtc();
@@ -252,16 +252,20 @@ class AbsensiService {
       latDosen = latDosenFromCaller;
       lngDosen = lngDosenFromCaller;
     } else {
-      final q = await supabase
+      final jd = await supabase
           .from('jadwal')
-          .select(
-            'dosen_id, dosen:dosen_id (id), dosen_location:dosen_id (lat, lng)',
-          )
+          .select('dosen_id')
           .eq('id', jadwalId)
           .maybeSingle();
 
-      latDosen = q?['dosen_location']?['lat'];
-      lngDosen = q?['dosen_location']?['lng'];
+      final loc = await supabase
+          .from('dosen_location')
+          .select('lat, lng')
+          .eq('dosen_id', jd?['dosen_id'])
+          .maybeSingle();
+
+      latDosen = loc?['lat'];
+      lngDosen = loc?['lng'];
     }
 
     if (latDosen == null || lngDosen == null) {

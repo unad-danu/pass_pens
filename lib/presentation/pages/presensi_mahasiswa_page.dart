@@ -24,20 +24,12 @@ class PresensiMahasiswaPage extends StatefulWidget {
   final String tipePresensi;
   final String matkul;
 
-  // =============================================
-  // FIX → gunakan lokasi dosen, bukan lokasi kelas
-  // =============================================
-  final double latDosen;
-  final double lonDosen;
-
   const PresensiMahasiswaPage({
     super.key,
     required this.mhsId,
     required this.jadwalId,
     required this.tipePresensi,
     required this.matkul,
-    required this.latDosen, // FIX
-    required this.lonDosen, // FIX
   });
 
   @override
@@ -223,22 +215,6 @@ class _PresensiMahasiswaPageState extends State<PresensiMahasiswaPage> {
       } catch (e) {
         Helpers.showSnackBar(context, "Gagal mendapatkan lokasi: $e");
         setState(() => loading = false);
-        return;
-      }
-
-      // ===================================================
-      // FIX: Hitung jarak ke lokasi DOSEN, bukan ke kelas
-      // ===================================================
-      final distance = Geolocator.distanceBetween(
-        pos.latitude,
-        pos.longitude,
-        widget.latDosen, // FIX
-        widget.lonDosen, // FIX
-      );
-
-      if (distance > 100) {
-        setState(() => loading = false);
-        Helpers.showSnackBar(context, "Anda berada di luar radius dosen!");
         return;
       }
 
