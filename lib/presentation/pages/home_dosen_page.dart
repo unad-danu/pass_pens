@@ -17,6 +17,7 @@ class MatkulDosen {
   final String ruangan;
   final String jam;
   final String hari;
+  final String kelas;
 
   MatkulDosen({
     required this.jadwalId,
@@ -24,6 +25,7 @@ class MatkulDosen {
     required this.ruangan,
     required this.jam,
     required this.hari,
+    required this.kelas,
   });
 }
 
@@ -97,9 +99,21 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
       // 4. Ambil jadwal untuk dosen tersebut + join matkul & ruangan
       final rawJadwal = await supabase
           .from('jadwal')
-          .select(
-            'id, hari, jam_mulai, jam_selesai, matkul ( nama_mk ), ruangan ( nama )',
-          )
+          .select('''
+            id,
+            hari,
+            jam_mulai,
+            jam_selesai,
+            matkul ( nama_mk ),
+            ruangan ( nama ),
+            kelas:kelas_id (
+              nama_kelas,
+              semester,
+              matkul:mk_id (
+                prodi:prodi_id (nama)
+              )
+            )
+          ''')
           .eq('dosen_id', dosenId)
           .order('hari', ascending: true);
 
@@ -108,6 +122,15 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
       for (final row in rawJadwal as List<dynamic>) {
         final mk = row['matkul'];
         final ruang = row['ruangan'];
+        final kelasRow = row['kelas'];
+        String kelasDetail = "-";
+        if (kelasRow != null) {
+          final semester = kelasRow["semester"] ?? "-";
+          final namaKelas = kelasRow["nama_kelas"] ?? "-";
+          final prodi = kelasRow["matkul"]?["prodi"]?["nama"] ?? "-";
+
+          kelasDetail = "$semester$prodi $namaKelas";
+        }
 
         final namaMk = (mk != null ? mk['nama_mk'] : null)?.toString() ?? '-';
         final namaRuang =
@@ -124,6 +147,7 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
             ruangan: namaRuang,
             jam: jamGabung,
             hari: (row['hari'] ?? '').toString(),
+            kelas: kelasDetail,
           ),
         );
       }
@@ -148,9 +172,25 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
         .where((m) => m.nama.toLowerCase().contains(search.toLowerCase()))
         .toList();
 
-    filtered.sort(
-      (a, b) => ascending ? a.nama.compareTo(b.nama) : b.nama.compareTo(a.nama),
-    );
+    List<String> urutanHari = [
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+      "Minggu",
+    ];
+
+    filtered.sort((a, b) {
+      int iA = urutanHari.indexOf(a.hari);
+      int iB = urutanHari.indexOf(b.hari);
+
+      if (iA == -1) iA = 999;
+      if (iB == -1) iB = 999;
+
+      return ascending ? iA.compareTo(iB) : iB.compareTo(iA);
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -304,6 +344,12 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                                 ),
 
                                 const SizedBox(height: 10),
+                                Text(
+                                  "Kelas : ${mk.kelas}",
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                                const SizedBox(height: 4),
+
                                 Text(
                                   "Hari     : ${mk.hari}",
                                   style: const TextStyle(fontSize: 15),
