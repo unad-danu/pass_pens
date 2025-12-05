@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_appbar.dart';
 import 'rekap_presensi_matkul_page.dart';
+import '../../data/services/rekap_dosen_service.dart';
 
 class RekapMatkulDosenPage extends StatefulWidget {
   const RekapMatkulDosenPage({super.key});
@@ -13,21 +14,24 @@ class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
   String searchQuery = "";
   bool ascending = true;
 
-  final List<Map<String, dynamic>> dataMatkul = [
-    {"matkul": "Workshop Sistem Analog", "minggu": 14, "hadir": 14, "alpha": 0},
-    {
-      "matkul": "Praktikum Organisasi Mesin & Bahasa Assembly",
-      "minggu": 13,
-      "hadir": 13,
-      "alpha": 0,
-    },
-    {
-      "matkul": "Organisasi Mesin & Bahasa Assembly",
-      "minggu": 13,
-      "hadir": 13,
-      "alpha": 0,
-    },
-  ];
+  List<Map<String, dynamic>> dataMatkul = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    final service = RekapDosenService();
+    final result = await service.getRekapMatkul();
+
+    setState(() {
+      dataMatkul = result;
+      loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

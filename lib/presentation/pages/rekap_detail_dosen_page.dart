@@ -56,10 +56,9 @@ class RekapDetailDosenPage extends StatelessWidget {
     final jadwalId = data["jadwal_id"];
     final pertemuan = data["minggu"];
 
-    // Ambil semua absensi per pertemuan
     final resp = await supabase
         .from("absensi")
-        .select("*, mahasiswa:nama_mahasiswa(id, nama, nrp)")
+        .select("*, mahasiswa:mhs_id(id, nama, nrp)")
         .eq("jadwal_id", jadwalId)
         .eq("pertemuan", pertemuan);
 

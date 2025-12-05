@@ -51,7 +51,6 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
   Future<void> _loadAll() async {
     final futures = await Future.wait([
       _loadPresensiStatus(),
-      _loadHistory(),
       _loadPresensiList(),
       _loadKelasDetail(),
     ]);
@@ -104,17 +103,6 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
         .maybeSingle();
 
     isOpen = data?["is_open"] ?? false;
-  }
-
-  Future<void> _loadHistory() async {
-    final data = await supabase
-        .from('absensi')
-        .select('id, dibuat, pertemuan')
-        .eq('jadwal_id', widget.jadwalId)
-        .order('pertemuan', ascending: false)
-        .order('dibuat', ascending: false);
-
-    historyPresensi = List<Map<String, dynamic>>.from(data);
   }
 
   Future<void> _loadPresensiList() async {
@@ -413,9 +401,6 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
                   ),
 
                   const SizedBox(height: 25),
-
-                  _buildHistory(),
-                  const SizedBox(height: 25),
                   _buildPresensiList(),
                   const SizedBox(height: 40),
                 ],
@@ -431,58 +416,6 @@ class _DetailMatkulDosenPageState extends State<DetailMatkulDosenPage> {
         style: ElevatedButton.styleFrom(backgroundColor: color),
         onPressed: onTap,
         child: Text(text),
-      ),
-    );
-  }
-
-  Widget _buildHistory() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            color: Colors.black,
-            child: const Center(
-              child: Text(
-                "History Presensi",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          if (historyPresensi.isEmpty) const Text("Belum ada presensi."),
-
-          for (var item in historyPresensi)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("ID: ${item['id']}"),
-                  Text(
-                    item['created_at']
-                        .toString()
-                        .replaceAll('T', ' ')
-                        .split(".")[0],
-                  ),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

@@ -147,7 +147,7 @@ class _NotificationPageState extends State<NotificationPage> {
                             MaterialPageRoute(
                               builder: (_) => DetailMatkulDosenPage(
                                 jadwalId: jadwalId,
-                                namaMatkul: jadwal["matkul"] ?? "",
+                                namaMatkul: jadwal["matkul"]["nama_mk"] ?? "",
                                 jamMulai: jadwal["jam_mulai"] ?? "",
                                 jamSelesai: jadwal["jam_selesai"] ?? "",
                               ),

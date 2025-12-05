@@ -349,14 +349,13 @@ class _HomeDosenPageState extends State<HomeDosenPage> {
                                   style: const TextStyle(fontSize: 15),
                                 ),
                                 const SizedBox(height: 4),
-
                                 Text(
-                                  "Hari     : ${mk.hari}",
+                                  "Ruangan : ${mk.ruangan}",
                                   style: const TextStyle(fontSize: 15),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Ruangan : ${mk.ruangan}",
+                                  "Hari     : ${mk.hari}",
                                   style: const TextStyle(fontSize: 15),
                                 ),
                                 const SizedBox(height: 4),
