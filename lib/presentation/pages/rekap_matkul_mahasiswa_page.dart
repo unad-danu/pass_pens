@@ -41,47 +41,57 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
       // 1. Ambil data mahasiswa
       final mhsRes = await supabase
           .from('mahasiswa')
-          .select('id, prodi_id, kelas, semester')
+          .select('id, kelas, prodi_id, semester')
           .eq('id_auth', user.id)
           .maybeSingle();
 
-      if (mhsRes == null) {
-        throw Exception("Data mahasiswa tidak ditemukan");
-      }
+      if (mhsRes == null) throw Exception("Data mahasiswa tidak ditemukan");
 
-      final int prodiId = mhsRes['prodi_id'] as int;
-      final String kelasMahasiswa = mhsRes['kelas'] as String;
-      final int semesterMahasiswa = mhsRes['semester'] as int;
+      final String kelasMhs = mhsRes['kelas'];
+      final int prodiId = mhsRes['prodi_id'];
+      final int semesterMhs = mhsRes['semester'];
 
-      // 2. Ambil matkul yang sesuai prodi & semester
-      final matkulList = await supabase
-          .from('matkul')
-          .select('id, nama_mk')
-          .eq('prodi_id', prodiId)
-          .eq('semester', semesterMahasiswa);
-
-      // 3. Ambil kelas mahasiswa
-      final kelas = await supabase
-          .from('kelas_mk')
-          .select('id')
-          .eq('nama_kelas', kelasMahasiswa)
-          .maybeSingle();
-
-      if (kelas == null) {
-        throw Exception("Kelas '$kelasMahasiswa' tidak ditemukan");
-      }
-
-      final kelasId = kelas['id'] as int;
-
+      // 2. Ambil JADWAL seperti di HomeMahasiswa
       final jadwalRes = await supabase
           .from('jadwal')
-          .select('id, matkul(nama_mk)')
-          .inFilter('matkul_id', matkulList.map((m) => m['id']).toList())
-          .eq('kelas_id', kelasId)
-          .order('id');
+          .select('''
+          id,
+          matkul (
+            id,
+            nama_mk,
+            prodi_id,
+            semester
+          ),
+          kelas_mk (
+            nama_kelas
+          )
+        ''')
+          .eq('matkul.prodi_id', prodiId)
+          .eq('matkul.semester', semesterMhs)
+          .eq('kelas_mk.nama_kelas', kelasMhs);
+
+      // 3. Hapus duplikat matkul (karena satu matkul bisa punya banyak jadwal)
+      final seen = <String>{};
+      final List<Map<String, dynamic>> hasil = [];
+
+      for (var row in jadwalRes) {
+        final mk = row['matkul'];
+
+        if (mk == null || mk is! Map) continue;
+
+        final nama = mk['nama_mk'] ?? "Tidak ada nama";
+
+        if (!seen.contains(nama)) {
+          seen.add(nama);
+          hasil.add({
+            "id": mk['id'],
+            "matkul": {"nama_mk": nama},
+          });
+        }
+      }
 
       setState(() {
-        dataMatkul = List<Map<String, dynamic>>.from(jadwalRes);
+        dataMatkul = hasil;
         loading = false;
       });
     } catch (e) {

@@ -40,41 +40,99 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
       final user = supabase.auth.currentUser;
       if (user == null) throw Exception("User tidak ditemukan.");
 
+      // ============================
+      // 1. Ambil data mahasiswa
+      // ============================
       final mhsRes = await supabase
           .from("mahasiswa")
-          .select("id")
+          .select("id, kelas, semester")
           .eq("id_auth", user.id)
           .maybeSingle();
 
       if (mhsRes == null) throw Exception("Data mahasiswa tidak ditemukan.");
-      final int mhsId = mhsRes["id"] as int;
 
-      final jadwalRes = await supabase
-          .from("jadwal")
-          .select("""
-            id,
-            matkul(nama_mk)
-          """)
-          .eq("matkul.nama_mk", widget.namaMatkul)
+      final int mhsId = mhsRes["id"];
+      final String mhsKelasNama = mhsRes["kelas"];
+
+      // ============================
+      // 2. Ambil matkul
+      // ============================
+      final matkulRes = await supabase
+          .from("matkul")
+          .select("id")
+          .eq("nama_mk", widget.namaMatkul)
+          .limit(1)
           .maybeSingle();
 
-      if (jadwalRes == null) throw Exception("Jadwal tidak ditemukan.");
-      final int jadwalId = jadwalRes["id"] as int;
+      final int? matkulId = matkulRes?["id"];
+      if (matkulId == null) throw Exception("Matkul tidak ditemukan.");
 
+      // ============================
+      // 3. Ambil kelas
+      // ============================
+      final kelasRes = await supabase
+          .from("kelas_mk")
+          .select("id")
+          .eq("nama_kelas", mhsKelasNama)
+          .eq("mk_id", matkulId)
+          .limit(1)
+          .maybeSingle();
+
+      final int? kelasId = kelasRes?["id"];
+      if (kelasId == null) throw Exception("Kelas tidak ditemukan.");
+
+      // ============================
+      // 4. Ambil jadwal
+      // ============================
+      final jadwalRes = await supabase
+          .from("jadwal")
+          .select("id")
+          .eq("kelas_id", kelasId)
+          .eq("matkul_id", matkulId)
+          .limit(1)
+          .maybeSingle();
+
+      final int? jadwalId = jadwalRes?["id"];
+      if (jadwalId == null) throw Exception("Jadwal tidak ditemukan.");
+
+      // ============================
+      // 5. Ambil absensi mahasiswa
+      // ============================
       final absensiRes = await supabase
           .from("absensi")
           .select("""
             pertemuan,
             status,
-            dibuat
+            distance_valid,
+            jarak,
+            dibuat,
+            valid,
+            mahasiswa:mhs_id(id, nama, nrp)
           """)
           .eq("mhs_id", mhsId)
           .eq("jadwal_id", jadwalId)
-          .order('pertemuan', ascending: true);
+          .order("pertemuan");
 
-      final List<Map<String, dynamic>> list = List<Map<String, dynamic>>.from(
-        absensiRes ?? [],
-      );
+      // ============================
+      // 6. Normalisasi status
+      // ============================
+      final List<Map<String, dynamic>> list = [];
+
+      for (final row in absensiRes) {
+        bool valid = row["distance_valid"] == true || row["valid"] == true;
+        String status = row["status"] ?? "";
+        int finalStatus = 0;
+
+        if (valid || status.toLowerCase() == "hadir") {
+          finalStatus = 1;
+        }
+
+        list.add({
+          "pertemuan": row["pertemuan"],
+          "status": finalStatus,
+          "dibuat": row["dibuat"],
+        });
+      }
 
       setState(() {
         absensi = list;
@@ -93,15 +151,22 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
     if (s is int) return s;
 
     final st = s.toString().toLowerCase();
-    if (st == 'hadir' || st == '1' || st == 'true') return 1;
-    if (st == 'alpha' || st == 'alpa' || st == 'tidak hadir' || st == '0')
+
+    if (st == 'hadir' || st == '1' || st == 'true') {
+      return 1;
+    }
+
+    if (st == 'alpha' || st == 'alpa' || st == 'tidak hadir' || st == '0') {
       return 0;
+    }
+
     return null;
   }
 
   DateTime? _parseTanggal(dynamic v) {
     if (v == null) return null;
     if (v is DateTime) return v;
+
     try {
       return DateTime.parse(v.toString());
     } catch (_) {
@@ -117,9 +182,9 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return Scaffold(
-        appBar: const CustomAppBar(role: "mhs"),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        appBar: CustomAppBar(role: "mhs"),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -146,6 +211,7 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
 
     final mingguSekarang = mingguAda.length;
     final belumDimulai = absensi.isEmpty;
+
     final double persen = (totalHadir + totalTidakHadir == 0)
         ? 0.0
         : (totalHadir / (totalHadir + totalTidakHadir)).toDouble();
@@ -174,9 +240,10 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 15),
+
           FadeInDown(
-            duration: const Duration(milliseconds: 500),
             child: _RekapHeader(
               nama: widget.namaMatkul,
               mingguSekarang: mingguSekarang,
@@ -187,13 +254,14 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
               belumDimulai: belumDimulai,
             ),
           ),
+
           const SizedBox(height: 20),
 
           ...List.generate(widget.totalPertemuan, (i) {
             final minggu = i + 1;
 
             final found = absensi.firstWhere(
-              (x) => (x["pertemuan"] == minggu),
+              (x) => x["pertemuan"] == minggu,
               orElse: () => {},
             );
 
@@ -224,10 +292,7 @@ class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
     );
   }
 }
-
-/// =================================================================
-///                    REKAP HEADER WIDGET
-/// =================================================================
+// Tambahkan di bawah _DetailRekapMatkulPageState
 
 class _RekapHeader extends StatelessWidget {
   final String nama;
@@ -397,10 +462,6 @@ class _RekapHeader extends StatelessWidget {
     );
   }
 }
-
-/// =================================================================
-///                    CARD PER PERTEMUAN
-/// =================================================================
 
 class _PertemuanCard extends StatelessWidget {
   final int nomor;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_appbar.dart';
 import 'rekap_presensi_matkul_page.dart';
 import '../../data/services/rekap_dosen_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RekapMatkulDosenPage extends StatefulWidget {
   const RekapMatkulDosenPage({super.key});
@@ -11,6 +12,8 @@ class RekapMatkulDosenPage extends StatefulWidget {
 }
 
 class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
+  final supabase = Supabase.instance.client;
+
   String searchQuery = "";
   bool ascending = true;
 
@@ -205,13 +208,38 @@ class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: Text(
-                                      "Perkuliahan terlaksana : ${item["hadir"]} pertemuan",
-                                      style: const TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    child: FutureBuilder(
+                                      future: Supabase.instance.client
+                                          .from('absensi')
+                                          .select('pertemuan')
+                                          .eq('jadwal_id', item["jadwal_id"]),
+                                      builder: (context, snapshot) {
+                                        if (!snapshot.hasData) {
+                                          return const Text("Loading...");
+                                        }
+
+                                        final data = snapshot.data as List;
+                                        final Set<int> mingguUnik = {};
+
+                                        for (final row in data) {
+                                          final minggu = row["pertemuan"];
+                                          if (minggu != null && minggu != 0) {
+                                            mingguUnik.add(minggu);
+                                          }
+                                        }
+
+                                        final int terlaksana =
+                                            mingguUnik.length;
+
+                                        return Text(
+                                          "Perkuliahan terlaksana : $terlaksana pertemuan",
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
@@ -237,13 +265,39 @@ class _RekapMatkulDosenPageState extends State<RekapMatkulDosenPage> {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: Text(
-                                      "Belum terlaksana : ${item["alpha"]} pertemuan",
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                    child: FutureBuilder(
+                                      future: Supabase.instance.client
+                                          .from('absensi')
+                                          .select('pertemuan')
+                                          .eq('jadwal_id', item["jadwal_id"]),
+                                      builder: (context, snapshot) {
+                                        if (!snapshot.hasData) {
+                                          return const Text("Loading...");
+                                        }
+
+                                        final data = snapshot.data as List;
+                                        final Set<int> mingguUnik = {};
+
+                                        for (final row in data) {
+                                          final minggu = row["pertemuan"];
+                                          if (minggu != null && minggu != 0) {
+                                            mingguUnik.add(minggu);
+                                          }
+                                        }
+
+                                        final int terlaksana =
+                                            mingguUnik.length;
+                                        final int belum = 16 - terlaksana;
+
+                                        return Text(
+                                          "Belum terlaksana : $belum pertemuan",
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
