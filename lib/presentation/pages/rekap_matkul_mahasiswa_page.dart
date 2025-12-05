@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/custom_appbar.dart';
 import 'rekap_detail_matkul_mahasiswa_page.dart';
 
@@ -11,26 +12,99 @@ class RekapMatkulMahasiswaPage extends StatefulWidget {
 }
 
 class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
-  List<Map<String, dynamic>> matkulList = [
-    {"nama": "Elektronika Dasar", "pertemuan": 16},
-    {"nama": "Sistem Digital", "pertemuan": 14},
-    {"nama": "Jaringan Komputer", "pertemuan": 12},
-    {"nama": "Pemrograman Mobile", "pertemuan": 10},
-  ];
+  final supabase = Supabase.instance.client;
+
+  bool loading = true;
+  String? errorMessage;
+
+  List<Map<String, dynamic>> dataMatkul = [];
 
   String searchQuery = "";
   bool ascending = true;
 
   @override
+  void initState() {
+    super.initState();
+    loadMatkulMahasiswa();
+  }
+
+  Future<void> loadMatkulMahasiswa() async {
+    try {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+      });
+
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception("User tidak ditemukan");
+
+      // 1. Ambil data mahasiswa
+      final mhsRes = await supabase
+          .from('mahasiswa')
+          .select('id, prodi_id, kelas, semester')
+          .eq('id_auth', user.id)
+          .maybeSingle();
+
+      if (mhsRes == null) {
+        throw Exception("Data mahasiswa tidak ditemukan");
+      }
+
+      final int prodiId = mhsRes['prodi_id'] as int;
+      final String kelasMahasiswa = mhsRes['kelas'] as String;
+      final int semesterMahasiswa = mhsRes['semester'] as int;
+
+      // 2. Ambil matkul yang sesuai prodi & semester
+      final matkulList = await supabase
+          .from('matkul')
+          .select('id, nama_mk')
+          .eq('prodi_id', prodiId)
+          .eq('semester', semesterMahasiswa);
+
+      // 3. Ambil kelas mahasiswa
+      final kelas = await supabase
+          .from('kelas_mk')
+          .select('id')
+          .eq('nama_kelas', kelasMahasiswa)
+          .maybeSingle();
+
+      if (kelas == null) {
+        throw Exception("Kelas '$kelasMahasiswa' tidak ditemukan");
+      }
+
+      final kelasId = kelas['id'] as int;
+
+      final jadwalRes = await supabase
+          .from('jadwal')
+          .select('id, matkul(nama_mk)')
+          .inFilter('matkul_id', matkulList.map((m) => m['id']).toList())
+          .eq('kelas_id', kelasId)
+          .order('id');
+
+      setState(() {
+        dataMatkul = List<Map<String, dynamic>>.from(jadwalRes);
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    List filtered = matkulList.where((m) {
-      return m["nama"].toLowerCase().contains(searchQuery.toLowerCase());
+    // Filter berdasarkan search
+    List filtered = dataMatkul.where((m) {
+      final nama = m["matkul"]?["nama_mk"] ?? "";
+      return nama.toLowerCase().contains(searchQuery.toLowerCase());
     }).toList();
 
+    // Sort A-Z atau Z-A
     filtered.sort(
       (a, b) => ascending
-          ? a["nama"].compareTo(b["nama"])
-          : b["nama"].compareTo(a["nama"]),
+          ? a["matkul"]["nama_mk"].compareTo(b["matkul"]["nama_mk"])
+          : b["matkul"]["nama_mk"].compareTo(a["matkul"]["nama_mk"]),
     );
 
     return Scaffold(
@@ -46,7 +120,8 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
           ),
 
           const SizedBox(height: 12),
-          // Search bar
+
+          // ===== SEARCH BAR =====
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -86,37 +161,57 @@ class _RekapMatkulMahasiswaPageState extends State<RekapMatkulMahasiswaPage> {
             ),
           ),
 
-          // LIST MATKUL
+          const SizedBox(height: 10),
+
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final mk = filtered[index];
-                return Card(
-                  elevation: 2,
-                  child: ListTile(
-                    title: Text(
-                      mk["nama"],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text("${mk["pertemuan"]} Pertemuan"),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DetailRekapMatkulPage(
-                            namaMatkul: mk["nama"],
-                            totalPertemuan: mk["pertemuan"],
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(child: Text("Terjadi kesalahan:\n$errorMessage"))
+                : filtered.isEmpty
+                ? const Center(child: Text("Tidak ada matkul"))
+                : RefreshIndicator(
+                    onRefresh: loadMatkulMahasiswa,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final mkData = filtered[index];
+                        final matkul = mkData['matkul'] ?? {};
+
+                        final namaMatkul =
+                            matkul['nama_mk'] ?? "Tidak ditemukan";
+                        final totalPertemuan = 16;
+
+                        // ❗ sementara 16, nanti bisa dihitung dari database absensi
+
+                        return Card(
+                          elevation: 2,
+                          child: ListTile(
+                            title: Text(
+                              namaMatkul,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text("$totalPertemuan Pertemuan"),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DetailRekapMatkulPage(
+                                    namaMatkul: namaMatkul,
+                                    totalPertemuan: totalPertemuan,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

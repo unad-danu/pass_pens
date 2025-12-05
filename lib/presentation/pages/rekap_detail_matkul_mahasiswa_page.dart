@@ -1,29 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/custom_appbar.dart';
 
-class DetailRekapMatkulPage extends StatelessWidget {
+class DetailRekapMatkulPage extends StatefulWidget {
   final String namaMatkul;
   final int totalPertemuan;
 
-  DetailRekapMatkulPage({
+  const DetailRekapMatkulPage({
     super.key,
     required this.namaMatkul,
     required this.totalPertemuan,
   });
 
-  // Dummy data
-  final List<int> absensi = [1, 0, 1, 1, 1, 0, 1, 1, 0, 1];
+  @override
+  State<DetailRekapMatkulPage> createState() => _DetailRekapMatkulPageState();
+}
+
+class _DetailRekapMatkulPageState extends State<DetailRekapMatkulPage> {
+  final supabase = Supabase.instance.client;
+
+  List<Map<String, dynamic>> absensi = [];
+  bool loading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    loadRekap();
+  }
+
+  Future<void> loadRekap() async {
+    try {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+      });
+
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception("User tidak ditemukan.");
+
+      final mhsRes = await supabase
+          .from("mahasiswa")
+          .select("id")
+          .eq("id_auth", user.id)
+          .maybeSingle();
+
+      if (mhsRes == null) throw Exception("Data mahasiswa tidak ditemukan.");
+      final int mhsId = mhsRes["id"] as int;
+
+      final jadwalRes = await supabase
+          .from("jadwal")
+          .select("""
+            id,
+            matkul(nama_mk)
+          """)
+          .eq("matkul.nama_mk", widget.namaMatkul)
+          .maybeSingle();
+
+      if (jadwalRes == null) throw Exception("Jadwal tidak ditemukan.");
+      final int jadwalId = jadwalRes["id"] as int;
+
+      final absensiRes = await supabase
+          .from("absensi")
+          .select("""
+            pertemuan,
+            status,
+            dibuat
+          """)
+          .eq("mhs_id", mhsId)
+          .eq("jadwal_id", jadwalId)
+          .order('pertemuan', ascending: true);
+
+      final List<Map<String, dynamic>> list = List<Map<String, dynamic>>.from(
+        absensiRes ?? [],
+      );
+
+      setState(() {
+        absensi = list;
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        loading = false;
+      });
+    }
+  }
+
+  int? _normalizeStatus(dynamic s) {
+    if (s == null) return null;
+    if (s is int) return s;
+
+    final st = s.toString().toLowerCase();
+    if (st == 'hadir' || st == '1' || st == 'true') return 1;
+    if (st == 'alpha' || st == 'alpa' || st == 'tidak hadir' || st == '0')
+      return 0;
+    return null;
+  }
+
+  DateTime? _parseTanggal(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    try {
+      return DateTime.parse(v.toString());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  DateTime _estimate(int i) {
+    final base = DateTime.now();
+    return base.add(Duration(days: i * 7));
+  }
 
   @override
   Widget build(BuildContext context) {
-    int totalHadir = absensi.where((e) => e == 1).length;
-    int totalTidakHadir = absensi.where((e) => e == 0).length;
+    if (loading) {
+      return Scaffold(
+        appBar: const CustomAppBar(role: "mhs"),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    int mingguSekarang = absensi.length;
-    bool belumDimulai = absensi.isEmpty;
+    if (errorMessage != null) {
+      return Scaffold(
+        appBar: const CustomAppBar(role: "mhs"),
+        body: Center(child: Text(errorMessage!)),
+      );
+    }
 
-    double persen = belumDimulai ? 0 : (totalHadir / absensi.length);
+    int totalHadir = 0;
+    int totalTidakHadir = 0;
+
+    for (final a in absensi) {
+      final st = _normalizeStatus(a["status"]);
+      if (st == 1) totalHadir++;
+      if (st == 0) totalTidakHadir++;
+    }
+
+    final mingguAda = <int>{
+      for (final a in absensi)
+        if (a["pertemuan"] != null) (a["pertemuan"] as int),
+    };
+
+    final mingguSekarang = mingguAda.length;
+    final belumDimulai = absensi.isEmpty;
+    final double persen = (totalHadir + totalTidakHadir == 0)
+        ? 0.0
+        : (totalHadir / (totalHadir + totalTidakHadir)).toDouble();
 
     return Scaffold(
       appBar: const CustomAppBar(role: "mhs"),
@@ -37,7 +162,6 @@ class DetailRekapMatkulPage extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: InkWell(
                   onTap: () => Navigator.pop(context),
-                  borderRadius: BorderRadius.circular(50),
                   child: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Icon(Icons.arrow_back, size: 28),
@@ -54,9 +178,9 @@ class DetailRekapMatkulPage extends StatelessWidget {
           FadeInDown(
             duration: const Duration(milliseconds: 500),
             child: _RekapHeader(
-              nama: namaMatkul,
+              nama: widget.namaMatkul,
               mingguSekarang: mingguSekarang,
-              totalPertemuan: totalPertemuan,
+              totalPertemuan: widget.totalPertemuan,
               totalHadir: totalHadir,
               totalTidakHadir: totalTidakHadir,
               persen: persen,
@@ -65,17 +189,33 @@ class DetailRekapMatkulPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // LIST PERTEMUAN
-          ...List.generate(totalPertemuan, (i) {
-            int? status = i < absensi.length ? absensi[i] : null;
-            DateTime baseDate = DateTime(2024, 11, 1);
+          ...List.generate(widget.totalPertemuan, (i) {
+            final minggu = i + 1;
+
+            final found = absensi.firstWhere(
+              (x) => (x["pertemuan"] == minggu),
+              orElse: () => {},
+            );
+
+            final statusRaw = found.isNotEmpty ? found["status"] : null;
+            final status = _normalizeStatus(statusRaw);
+
+            final tRaw = found.isNotEmpty
+                ? (found["dibuat"] ?? found["created_at"] ?? found["created"])
+                : null;
+
+            final parsed = _parseTanggal(tRaw);
+            final tanggal = parsed ?? _estimate(i);
+
+            final belum = status == null;
+
             return FadeInUp(
               duration: Duration(milliseconds: 300 + (i * 70)),
               child: _PertemuanCard(
-                nomor: i + 1,
-                tanggal: baseDate.add(Duration(days: i * 7)),
+                nomor: minggu,
+                tanggal: tanggal,
                 status: status,
-                belumDimulai: belumDimulai,
+                belumDimulai: belum,
               ),
             );
           }),
@@ -85,9 +225,10 @@ class DetailRekapMatkulPage extends StatelessWidget {
   }
 }
 
-//
-// HEADER
-//
+/// =================================================================
+///                    REKAP HEADER WIDGET
+/// =================================================================
+
 class _RekapHeader extends StatelessWidget {
   final String nama;
   final int mingguSekarang;
@@ -111,7 +252,6 @@ class _RekapHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header hitam
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -131,7 +271,6 @@ class _RekapHeader extends StatelessWidget {
           ),
         ),
 
-        // Content
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -259,9 +398,10 @@ class _RekapHeader extends StatelessWidget {
   }
 }
 
-//
-// CARD PER PERTEMUAN
-//
+/// =================================================================
+///                    CARD PER PERTEMUAN
+/// =================================================================
+
 class _PertemuanCard extends StatelessWidget {
   final int nomor;
   final DateTime tanggal;
@@ -301,10 +441,7 @@ class _PertemuanCard extends StatelessWidget {
       "Desember",
     ];
 
-    String namaHari = hari[date.weekday - 1];
-    String namaBulan = bulan[date.month - 1];
-
-    return "$namaHari, ${date.day} $namaBulan ${date.year}";
+    return "${hari[date.weekday - 1]}, ${date.day} ${bulan[date.month - 1]} ${date.year}";
   }
 
   @override
@@ -331,7 +468,7 @@ class _PertemuanCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: belumDimulai ? Colors.grey.shade300 : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
@@ -358,17 +495,14 @@ class _PertemuanCard extends StatelessWidget {
               ],
             ),
           ),
-
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  statusText,
-                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
-                ),
+              Text(
+                statusText,
+                style: TextStyle(fontWeight: FontWeight.bold, color: color),
               ),
             ],
           ),
